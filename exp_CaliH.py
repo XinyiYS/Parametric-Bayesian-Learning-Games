@@ -116,7 +116,6 @@ def p1_generate_fcn(sample_size):
 
 print("Global True param:", pr.true_param)
 
-
 beta = 1
 
 player_2.data_cov_inv = np.linalg.inv(player_2.data_cov) + beta * (X_2.T @ X_2)
@@ -157,7 +156,7 @@ p2_shapley_list = []
 
 for i in range(max_iteration):
     # Progress
-    print("Iteration: {}/{} ".format(i + 1, max_iteration))
+    print("----------------- Iteration: {}/{} -----------------".format(i + 1, max_iteration))
     print("Sample size: {} + {}".format(p1_sample_size, p2_sample_size))
 
     # Record current sample sizes
@@ -190,25 +189,28 @@ for i in range(max_iteration):
     # Get the current parameter estimate
     estimated_param = post_mean
 
-
     # Estimate the Fisher informations at the estimated parameter
     # player 1
     emp_Fisher_1 = np.zeros((num_params, num_params))
     
+    p1_theta_cov = np.cov(np.concatenate([sample for sample in data_theta1[0]] ), rowvar=False)
     for theta_hat in data_theta1[0][0]:
-        sample_dlogL = player_1.dlogL(theta_hat, estimated_param)
+        sample_dlogL = player_1.dlogL(theta_hat, estimated_param, p1_theta_cov)
         sample_dlogL.shape = (num_params, 1)
         emp_Fisher_1 += np.matmul(sample_dlogL, np.transpose(sample_dlogL))
     emp_Fisher_1 = emp_Fisher_1 / len(data_theta1[0][0])
-    
+
     # print("Player 1 fisher:", emp_Fisher_1 )
     # player 2
+
+    p2_cov_hat = np.cov(np.concatenate([sample for sample in data_x2[0]] ), rowvar=False)
     emp_Fisher_2 = np.zeros((num_params, num_params))
     for data_point_x in data_x2[0][0]:
-        sample_dlogL = player_2.dlogL(data_point_x, estimated_param)
+        sample_dlogL = player_2.dlogL(data_point_x, estimated_param, p2_cov_hat)
         sample_dlogL.shape = (num_params, 1)
         emp_Fisher_2 += np.matmul(sample_dlogL, np.transpose(sample_dlogL))
     emp_Fisher_2 = emp_Fisher_2 / len(data_x2[0][0])
+
     
     # Store the determinant of estimated Fisher information
     p1_FI_list.append(np.linalg.det(emp_Fisher_1))
@@ -266,9 +268,8 @@ np.savetxt(oj(exp_dir, "shapley_fair_2.txt"), p2_shapley_list)
 # Plot sample sizes
 plt.plot(p1_sample_size_list, linestyle='--', color='red', label='player 1')
 plt.plot(p2_sample_size_list, linestyle='--', color='blue', label='player 2')
-plt.xlable('Iteration', fontsize=16)
-plt.ylable('Cumulative number of points shared', fontsize=16)
-
+plt.xlabel('Iteration', fontsize=16)
+plt.ylabel('Cumulative number of points shared', fontsize=16)
 plt.legend()
 plt.savefig(oj(exp_dir, 'output_sharing_rate.pdf'))
 plt.show()
@@ -277,8 +278,8 @@ plt.clf()
 # Plot the shapley value
 plt.plot(p1_shapley_list, linestyle='--', color='red', label='player 1')
 plt.plot(p2_shapley_list, linestyle='--', color='blue', label='player 2')
-plt.xlable('Iteration', fontsize=16)
-plt.ylable('Shapley value', fontsize=16)
+plt.xlabel('Iteration', fontsize=16)
+plt.ylabel('Shapley value', fontsize=16)
 plt.legend()
 plt.savefig(oj(exp_dir, 'output_shapley_fair.pdf'))
 plt.show()

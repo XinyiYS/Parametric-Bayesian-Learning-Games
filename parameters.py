@@ -29,7 +29,7 @@ prior_mean = np.zeros(num_params)
 prior_cov = np.diag(np.repeat(1, num_params))
 
 # For fair data sharing rate
-base_sample_size = 5
-base_sample_increment = 5
-max_sample_increment = 40
+base_sample_size = 20
+base_sample_increment = 10
+max_sample_increment = 50
 max_iteration = 30

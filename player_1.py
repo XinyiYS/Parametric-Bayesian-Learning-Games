@@ -87,39 +87,58 @@ logL = T.log(logL)
 dlogL = theano.function([x, y, theta], T.grad(logL, theta))
 '''
 
-
-
 # https://jwmi.github.io/SL/11-Penalized-regression.pdf
 
 # https://medium.com/quick-code/maximum-likelihood-estimation-for-regression-65f9c99f815d
-data_cov = np.diag(np.full(num_params, 2.5))
+# data_cov = np.diag(np.full(num_params, 2.5))
+# -- OLD -- #
+# x = T.dvector('x')
+# theta = T.dvector('theta')    
+# cov_hat = T.matrix('cov_hat')
 
 
-# from player 2
+# # Define the logL function
+# logL_enum = T.dot(T.transpose(x - theta), np.linalg.inv(cov_hat))
+# logL_enum = T.dot(logL_enum, x - theta) / -2
+# logL_enum = T.exp(logL_enum)
+# logL_denom = T.sqrt(T.pow((2 * np.pi), num_params) * np.linalg.det(cov_hat)) 
+# logL = T.log(logL_enum/logL_denom)
+# dlogL = theano.function([x, theta], T.grad(logL, theta))
+
+
+# -- NEW -- # with estimated cov
 # Input variables
 x = T.dvector('x')
 theta = T.dvector('theta')    
+cov_hat = T.dmatrix('cov_hat')
 
 # Define the logL function
-logL_enum = T.dot(T.transpose(x - theta), np.linalg.inv(data_cov))
+logL_enum = T.dot(T.transpose(x - theta), T.nlinalg.matrix_inverse(cov_hat))
 logL_enum = T.dot(logL_enum, x - theta) / -2
 logL_enum = T.exp(logL_enum)
-logL_denom = T.sqrt(T.pow((2 * np.pi), num_params) * np.linalg.det(data_cov)) 
+logL_denom = T.sqrt(T.pow((2 * np.pi), num_params) * T.nlinalg.det(cov_hat)) 
+
 logL = T.log(logL_enum/logL_denom)
 
-
 # The dlog likelihood function
-dlogL = theano.function([x, theta], T.grad(logL, theta))
+dlogL = theano.function([x, theta, cov_hat], T.grad(logL, theta))
+
+
 
 
 def estimate_fisher_information(sample_size):
     # Generate some samples
-    sample_x, sample_y = generate(sample_size)
+    sample_theta = generate(sample_size)
     
     # Estimate the Fisher information
     emp_Fisher = np.zeros((num_params, num_params))
     for i in range(sample_size):
-        sample_dlogL = dlogL(sample_x[i], sample_y[i], true_param)
+        theta_hat = sample_theta[i]
+        cov_hat = None
+
+        sample_dlogL = dlogL(None , true_param)
+        
+
         sample_dlogL.shape = (num_params, 1)
         emp_Fisher += np.matmul(sample_dlogL, np.transpose(sample_dlogL))
     emp_Fisher = emp_Fisher / sample_size

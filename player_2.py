@@ -29,20 +29,39 @@ def generate_and_plot(sample_size, ylim):
 
 """Define the dlogL function using Theano's auto gradient"""    
 # Input variables
+
+# -- OLD -- #
+# x = T.dvector('x')
+# theta = T.dvector('theta')    
+# cov_hat = T.matrix('cov_hat')
+
+
+# # Define the logL function
+# logL_enum = T.dot(T.transpose(x - theta), np.linalg.inv(cov_hat))
+# logL_enum = T.dot(logL_enum, x - theta) / -2
+# logL_enum = T.exp(logL_enum)
+# logL_denom = T.sqrt(T.pow((2 * np.pi), num_params) * np.linalg.det(cov_hat)) 
+# logL = T.log(logL_enum/logL_denom)
+# dlogL = theano.function([x, theta], T.grad(logL, theta))
+
+# -- NEW -- # estimates the cov
 x = T.dvector('x')
 theta = T.dvector('theta')    
+cov_hat = T.dmatrix('cov_hat')
 
 # Define the logL function
-logL_enum = T.dot(T.transpose(x - theta), np.linalg.inv(data_cov))
+logL_enum = T.dot(T.transpose(x - theta), T.nlinalg.matrix_inverse(cov_hat))
 logL_enum = T.dot(logL_enum, x - theta) / -2
 logL_enum = T.exp(logL_enum)
-logL_denom = T.sqrt(T.pow((2 * np.pi), num_params) * np.linalg.det(data_cov)) 
+logL_denom = T.sqrt(T.pow((2 * np.pi), num_params) * T.nlinalg.det(cov_hat)) 
+
 logL = T.log(logL_enum/logL_denom)
 
-
-
 # The dlog likelihood function
-dlogL = theano.function([x, theta], T.grad(logL, theta))
+dlogL = theano.function([x, theta, cov_hat], T.grad(logL, theta))
+
+
+
 
 def estimate_fisher_information(sample_size):
     emp_Fisher = np.zeros((num_params, num_params))
