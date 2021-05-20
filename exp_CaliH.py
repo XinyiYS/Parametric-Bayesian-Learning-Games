@@ -49,10 +49,10 @@ import random
 random.seed(7913)
 
 from sklearn.model_selection import train_test_split
-X_1, X_2, y_1, y_2 = train_test_split(X, y, test_size=0.4, random_state=42)
 
-ratio_1, ratio_2 = 0.2, 0.05
-
+X_1, X_2, y_1, y_2 = train_test_split(X, y, test_size=0.01, random_state=42)
+# -- create nans and impute nan with averages -- #
+ratio_1, ratio_2 = 0.2, 0.4
 
 nan_count_1 = int(len(X_1) * ratio_1)
 nan_count_2 = int(len(X_2) * ratio_2)  
@@ -75,17 +75,14 @@ def impute_with_mean(X):
 
     #Place column means in the indices. Align the arrays using take
     X[inds] = np.take(col_mean, inds[1])
-
     return X
 
-# -- impute nan with averages -- #
 
 X_1 = impute_with_mean(X_1)
 X_2 = impute_with_mean(X_2)
 
 assert 0 == np.count_nonzero(np.isnan(X_1))
 assert 0 == np.count_nonzero(np.isnan(X_2))
-
 
 
 import parameters as pr
@@ -95,34 +92,53 @@ import player_12 as player_12
 
 import theano
 import theano.tensor as T
-
-
 reg_lambda = 1e-3
-
 from linear_regression_sampling import leverage_iid_sampling
+
+
+# set player 1's data to be the full data
+X_1, y_1 = X, y
 
 def p1_generate_fcn(sample_size):
     ''' can we use volume sampling to guarantee unbiased-ness? '''
-    local_size = 100
+    local_size = 2000
     sample_theta = np.zeros((sample_size, num_params))    
-    sample_x, sample_y = [], []  
+    # sample_x, sample_y = [], []  
     for i in range(sample_size):
         # indices = np.random.choice(np.arange(len(X_1)), size=local_size)
         # indices = fast_reg_vol_sampling(X_1, local_size, reg_lambda)
+        
+        # depends on the global variable of X_1
         indices = leverage_iid_sampling(X_1, local_size, reg_lambda)
         x, y = X_1[indices], y_1[indices]
+
         theta_hat = np.linalg.inv(x.T @ x + reg_lambda * np.identity(x.shape[1])) @ x.T @ y  
         sample_theta[i] = theta_hat
-        sample_x.append(x)
-        sample_y.append(y)
+        # sample_x.append(x)
+        # sample_y.append(y)
 
-    sample_x = np.asarray(sample_x).reshape(sample_size, local_size, -1)
-    sample_y = np.asarray(sample_y).reshape(sample_size, local_size)
-    return sample_x, sample_y, sample_theta
+    # sample_x = np.asarray(sample_x).reshape(sample_size, local_size, -1)
+    # sample_y = np.asarray(sample_y).reshape(sample_size, local_size)
+    # return sample_x, sample_y, sample_theta
+    return sample_theta
+
+
+print("Global True param:", pr.true_param)
+
+
+beta = 1
+
+player_2.data_cov_inv = np.linalg.inv(player_2.data_cov) + beta * (X_2.T @ X_2)
+player_2.data_cov = np.linalg.inv(player_2.data_cov_inv)
+player_2.data_mean = np.linalg.inv(X_2.T @ X_2 + reg_lambda * np.identity(X_2.shape[1])) @ X_2.T @ y_2
+
+# player_2.true_param = np.linalg.inv(X_2.T @ X_2 + reg_lambda * np.identity(X_2.shape[1])) @ X_2.T @ y_2
+print("Player 2 maintained prior mean:", player_2.data_mean)
+print("Player 2 maintained prior cov:", player_2.data_cov)
 
 
 def p2_generate_fcn(sample_size):
-    x = np.random.multivariate_normal(mean=player_2.true_param, cov=player_2.data_cov, size=sample_size)
+    x = np.random.multivariate_normal(mean=player_2.data_mean, cov=player_2.data_cov, size=sample_size)
     return x
 
 
@@ -158,15 +174,20 @@ for i in range(max_iteration):
     p2_sample_size_list.append(p2_sample_size)
     
     # Generate the sample kl divergences
-    sample_kl_1, data_x1, data_y1, data_theta1 = player_1.sample_kl_divergences(
+    # sample_kl_1, data_x1, data_y1, data_theta1 = player_1.sample_kl_divergences(
+    sample_kl_1, data_theta1 = player_1.sample_kl_divergences(
         [p1_sample_size], 1, posterior_sample_size, prior_mean, prior_cov, generate_fcn=p1_generate_fcn)
     sample_kl_2, data_x2 = player_2.sample_kl_divergences(
-        [p2_sample_size], 1, posterior_sample_size, prior_mean, prior_cov, generate_fcn=None)
+        [p2_sample_size], 1, posterior_sample_size, prior_mean, prior_cov, generate_fcn=p2_generate_fcn)
     sample_kl_12, post_mean = player_12.sample_kl_divergences(
         [p1_sample_size + p2_sample_size], 1,
         posterior_sample_size, prior_mean, prior_cov, 
         data_theta1, data_x2)
     
+
+    print("Sample kl divergence 1:", sample_kl_1)
+    print("Sample kl divergence 2:", sample_kl_2)
+    print("Sample kl divergence 12:", sample_kl_12)
     # Current Shapley value
     sample_shapley_1 = np.multiply(0.5, sample_kl_1) + np.multiply(0.5, (np.subtract(sample_kl_12, sample_kl_2)))
     sample_shapley_2 = np.multiply(0.5, sample_kl_2) + np.multiply(0.5, (np.subtract(sample_kl_12, sample_kl_1)))
@@ -180,8 +201,13 @@ for i in range(max_iteration):
     # Estimate the Fisher informations at the estimated parameter
     # player 1
     emp_Fisher_1 = np.zeros((num_params, num_params))
-    for j in range(len(data_theta1[0][0])):
-        sample_dlogL = player_1.dlogL(data_x1[0][0][j], data_y1[0][0][j], estimated_param)
+    
+    for theta_hat in data_theta1[0][0]:
+
+    # for j in range(len(data_theta1[0][0])):
+        # x,y  = data_x1[0][0][j], data_y1[0][0][j]
+        # theta_hat = np.linalg.inv(x.T @ x + reg_lambda * np.identity(x.shape[1])) @ x.T @ y
+        sample_dlogL = player_1.dlogL(theta_hat, estimated_param)
         sample_dlogL.shape = (num_params, 1)
         emp_Fisher_1 += np.matmul(sample_dlogL, np.transpose(sample_dlogL))
     emp_Fisher_1 = emp_Fisher_1 / len(data_theta1[0][0])
@@ -202,22 +228,38 @@ for i in range(max_iteration):
     # Estimate the fair rate & next sample size
     det_F1 = np.linalg.det(emp_Fisher_1)
     det_F2 = np.linalg.det(emp_Fisher_2)
+    print('Current det F1 vs F2: ', det_F1, det_F2)
     if det_F1 > det_F2:
         rate = np.power(det_F1 / det_F2, 1.0/num_params)
         p1_sample_size += base_sample_increment
         target = round(p1_sample_size * rate)
+        
+        p2_to_add = 0
         if p2_sample_size < target:
-            p2_sample_size += min(target - p2_sample_size, max_sample_increment)
-    else: 
-        if det_F2 > det_F1:
+            p2_to_add = int(min(target - p2_sample_size, max_sample_increment))
+            p2_sample_size += p2_to_add
+
+        print("Player 1 vs. 2 additional shared: ", base_sample_increment, p2_to_add)
+
+        p2_sample_size = int(p2_sample_size)
+
+    elif det_F2 > det_F1:
             rate = np.power(det_F2 / det_F1, 1.0/num_params)
             p2_sample_size += base_sample_increment
             target = round(p2_sample_size * rate)
+            
+            p1_to_add = 0
             if p1_sample_size < target:
-                p1_sample_size += min(target - p1_sample_size, max_sample_increment)
-        else:
-            p1_sample_size += base_sample_increment
-            p2_sample_size += base_sample_increment   
+                p1_to_add = int(min(target - p1_sample_size, max_sample_increment))
+                p1_sample_size += p1_to_add
+
+            print("Player 1 vs. 2 additional shared: ", p1_to_add, base_sample_increment)
+            p1_sample_size = int(p1_sample_size)
+    else:
+        p1_sample_size += base_sample_increment
+        p2_sample_size += base_sample_increment   
+        
+
 
 exp_dir = 'CaliH/lvg_iid'
 
@@ -233,16 +275,21 @@ np.savetxt(oj(exp_dir, "shapley_fair_1.txt"), p1_shapley_list)
 np.savetxt(oj(exp_dir, "shapley_fair_2.txt"), p2_shapley_list)
 
 # Plot sample sizes
-plt.plot(p1_sample_size_list, linestyle='--', color='red', label='1')
-plt.plot(p2_sample_size_list, linestyle='--', color='blue', label='2')
+plt.plot(p1_sample_size_list, linestyle='--', color='red', label='player 1')
+plt.plot(p2_sample_size_list, linestyle='--', color='blue', label='player 2')
+plt.xlable('Iteration', fontsize=16)
+plt.ylable('Cumulative number of points shared', fontsize=16)
+
 plt.legend()
 plt.savefig(oj(exp_dir, 'output_sharing_rate.pdf'))
 plt.show()
 plt.clf()    
 
 # Plot the shapley value
-plt.plot(p1_shapley_list, linestyle='--', color='red', label='1')
-plt.plot(p2_shapley_list, linestyle='--', color='blue', label='1')
+plt.plot(p1_shapley_list, linestyle='--', color='red', label='player 1')
+plt.plot(p2_shapley_list, linestyle='--', color='blue', label='player 2')
+plt.xlable('Iteration', fontsize=16)
+plt.ylable('Shapley value', fontsize=16)
 plt.legend()
 plt.savefig(oj(exp_dir, 'output_shapley_fair.pdf'))
 plt.show()

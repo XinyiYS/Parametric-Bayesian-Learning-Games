@@ -67,6 +67,11 @@ def compute_mean(x, theta):
 
 
 
+def get_theta_hat(x, y, reg_lambda=1e-3):
+    return np.linalg.inv(x.T @ x + reg_lambda * np.identity(x.shape[1])) @ x.T @ y  
+
+
+
 def sample_kl_divergences(sample_size_range, num_samples, num_draws,
                           prior_mean, prior_cov,
                           data_theta_1,
@@ -97,21 +102,28 @@ def sample_kl_divergences(sample_size_range, num_samples, num_draws,
                                   shape=(1, num_params))
             
             # Data holders
-            pmData_theta_1 = pm.Data('pmData_theta_1', data_theta_1[i][0])
-
             # pmData_x_1 = pm.Data('pmData_x_1', data_x_1[i][0])
             # pmData_y_1 = pm.Data('pmData_y_1', data_y_1[i][0])
+
+            pmData_theta_1 = pm.Data('pmData_theta_1', data_theta_1[i][0])
+
+
             pmData_x_2 = pm.Data('pmData_x_2', data_x_2[i][0])
             
             # Specify the observed variables
             # From player 1
+            p1_theta_cov = np.cov(np.concatenate([sample for sample in data_theta_1[i]] ), rowvar=False)
+            p1_theta_cov = np.diag(np.diag(p1_theta_cov))
+            pmTheta_1 = pm.MvNormal('pmTheta_1', mu=pmTheta, cov=p1_theta_cov, observed=pmData_theta_1)
+            # pmTheta_1 = pm.MvNormal('pmTheta_1', mu=pmTheta, cov=p2.data_cov, observed=pmData_theta_1)
 
-            # pm_x_1 = pm.Normal('pm_x_1', mu=p1.x_mean, sigma=p1.x_std_dev, observed=pmData_x_1)
-            # pm_y_1 = pm.Normal('pm_y_1', mu=compute_mean(pm_x_1, pmTheta), 
-                             # sigma=p1.noise_std_dev, observed=pmData_y_1)
             # From player 2
             pm_x_2 = pm.MvNormal('pm_x_2', mu=pmTheta, cov=p2.data_cov, observed=pmData_x_2)
-            
+
+            p1_theta_mean = np.mean(np.concatenate([sample for sample in data_theta_1[i] ]  ), axis=0)
+            p2_theta_mean = np.mean(np.concatenate([sample for sample in data_x_2[i]]  ), axis=0)
+            print("1 vs. 2's l2-norm to true param:", np.linalg.norm(p1_theta_mean - true_param) ,  np.linalg.norm(p2_theta_mean - true_param))
+
             for j in range(num_samples):
                 # Show progress
                 print('player 1+2 progress: {}/{}'.format(

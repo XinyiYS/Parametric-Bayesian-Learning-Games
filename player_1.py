@@ -92,16 +92,24 @@ dlogL = theano.function([x, y, theta], T.grad(logL, theta))
 # https://jwmi.github.io/SL/11-Penalized-regression.pdf
 
 # https://medium.com/quick-code/maximum-likelihood-estimation-for-regression-65f9c99f815d
-
-x = T.matrix('x')
-y = T.dvector('y')
-theta = T.dvector('theta')
-reg_lambda = 2.47e-7
-
-logL = 1.0 / (noise_var ** 2) * T.dot(y - T.dot(x, theta), y - T.dot(x, theta) )  - (reg_lambda * T.dot(theta, theta))
-dlogL = theano.function([x, y, theta], T.grad(logL, theta))
+data_cov = np.diag(np.full(num_params, 2.5))
 
 
+# from player 2
+# Input variables
+x = T.dvector('x')
+theta = T.dvector('theta')    
+
+# Define the logL function
+logL_enum = T.dot(T.transpose(x - theta), np.linalg.inv(data_cov))
+logL_enum = T.dot(logL_enum, x - theta) / -2
+logL_enum = T.exp(logL_enum)
+logL_denom = T.sqrt(T.pow((2 * np.pi), num_params) * np.linalg.det(data_cov)) 
+logL = T.log(logL_enum/logL_denom)
+
+
+# The dlog likelihood function
+dlogL = theano.function([x, theta], T.grad(logL, theta))
 
 
 def estimate_fisher_information(sample_size):
@@ -146,10 +154,6 @@ def compute_mean(x, theta):
 
 
 
-
-
-
-
 def sample_kl_divergences(sample_size_range, num_samples, num_draws,
                           prior_mean, prior_cov, generate_fcn=None):
     
@@ -173,30 +177,33 @@ def sample_kl_divergences(sample_size_range, num_samples, num_draws,
         # The estimated divergences for a sample size
         estimated_kl = []
         # For storing data with the same sample_size
-        data_x = []
-        data_y = []
+        # data_x = []
+        # data_y = []
         data_theta = []
         
         # Build the pymc3 model
         with pm.Model() as model:
             
             # Specify the prior
-            pmTheta = pm.MvNormal('pmTheta', mu=prior_mean, cov=prior_cov, 
-                                  shape=(1, num_params))
+            pmTheta = pm.MvNormal('pmTheta', mu=prior_mean, cov=prior_cov, shape=(1, num_params))
             
             # Data holders
-
-            sample_x1, sample_y1, sample_theta = generate_fcn(sample_size)
-            # sample_x, sample_y = generate_fcn(sample_size)
+            sample_theta = generate_fcn(sample_size)
 
             pmData_theta = pm.Data('pmData_theta', sample_theta)
-            # pmData_x = pm.Data('pmData_x', sample_x)
-            # pmData_y = pm.Data('pmData_y', sample_y)
+
                     
             # Specify the observed variables
-            # pm_x = pm.Normal('pm_x', mu=x_mean, sigma=x_std_dev, observed=pmData_x)
-            # pm_y = pm.Normal('pm_y', mu=compute_mean(pm_x, pmTheta), 
-                             # sigma=noise_std_dev, observed=pmData_y)
+            
+            # use an estimated cov
+
+            # p1_theta_cov = np.cov(np.vstack([sample for sample in sample_theta]), rowvar=False)
+            # p1_theta_cov = np.diag(np.diag(p1_theta_cov))
+            # p1_theta = pm.MvNormal('p1_theta', mu=pmTheta, cov=p1_theta_cov, observed=pmData_theta)
+            
+            # use a predetermined cov
+            p1_theta = pm.MvNormal('p1_theta', mu=pmTheta, cov=data_cov, observed=pmData_theta)
+
             
             for j in range(num_samples):
                 # Show progress
@@ -204,7 +211,8 @@ def sample_kl_divergences(sample_size_range, num_samples, num_draws,
                 
                 # Generate the data
 
-                sample_x, sample_y, sample_theta = generate_fcn(sample_size)
+                sample_theta = generate_fcn(sample_size)
+                pm.set_data({'pmData_theta': sample_theta})
 
 
                 # sample_x, sample_y = generate_fcn(sample_size)
@@ -225,8 +233,6 @@ def sample_kl_divergences(sample_size_range, num_samples, num_draws,
                 
                 # Store the data
                 data_theta.append(sample_theta)
-                data_x.append(sample_x)
-                data_y.append(sample_y)
                 
                 # Sample from the posterior
                 pmTrace = pm.sample(draws=num_draws, 
@@ -266,11 +272,9 @@ def sample_kl_divergences(sample_size_range, num_samples, num_draws,
     
         estimated_kl_values.append(estimated_kl)
         
-        generated_data_x.append(data_x)
-        generated_data_y.append(data_y)
         generated_data_theta.append(data_theta)
     
-    return estimated_kl_values, generated_data_x, generated_data_y, generated_data_theta,
+    return estimated_kl_values, generated_data_theta
 
 
 
