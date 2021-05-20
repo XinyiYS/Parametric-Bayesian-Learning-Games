@@ -145,7 +145,7 @@ def sample_kl_divergences(sample_size_range, num_samples, num_draws,
                 pmTrace = pm.sample(draws=num_draws, 
                                     cores=pr.max_num_cores, 
                                     tune=pr.tuning_step, 
-                                    progressbar=0)
+                                    progressbar=False)
                 summary = pm.stats.summary(pmTrace)
                 
                 # Get the sample mean and covariance of the samples
