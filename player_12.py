@@ -107,18 +107,24 @@ def sample_kl_divergences(sample_size_range, num_samples, num_draws,
 
             pmData_theta_1 = pm.Data('pmData_theta_1', data_theta_1[i][0])
 
-
             pmData_x_2 = pm.Data('pmData_x_2', data_x_2[i][0])
             
             # Specify the observed variables
             # From player 1
+
+            # specifying the theta with an observed cov's diagonal
             p1_theta_cov = np.cov(np.concatenate([sample for sample in data_theta_1[i]] ), rowvar=False)
             p1_theta_cov = np.diag(np.diag(p1_theta_cov))
             pmTheta_1 = pm.MvNormal('pmTheta_1', mu=pmTheta, cov=p1_theta_cov, observed=pmData_theta_1)
             # pmTheta_1 = pm.MvNormal('pmTheta_1', mu=pmTheta, cov=p2.data_cov, observed=pmData_theta_1)
 
             # From player 2
-            pm_x_2 = pm.MvNormal('pm_x_2', mu=pmTheta, cov=p2.data_cov, observed=pmData_x_2)
+
+            p2_x_cov = np.cov(np.vstack([sample for sample in data_x_2[i]]), rowvar=False)
+            p2_x_cov = np.diag(np.diag(p2_x_cov))
+
+            pm_x_2 = pm.MvNormal('pm_x_2', mu=pmTheta, cov=p2_x_cov, observed=pmData_x_2)
+            # pm_x_2 = pm.MvNormal('pm_x_2', mu=pmTheta, cov=p2.data_cov, observed=pmData_x_2)
 
             p1_theta_mean = np.mean(np.concatenate([sample for sample in data_theta_1[i] ]  ), axis=0)
             p2_theta_mean = np.mean(np.concatenate([sample for sample in data_x_2[i]]  ), axis=0)

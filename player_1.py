@@ -197,12 +197,12 @@ def sample_kl_divergences(sample_size_range, num_samples, num_draws,
             
             # use an estimated cov
 
-            # p1_theta_cov = np.cov(np.vstack([sample for sample in sample_theta]), rowvar=False)
-            # p1_theta_cov = np.diag(np.diag(p1_theta_cov))
-            # p1_theta = pm.MvNormal('p1_theta', mu=pmTheta, cov=p1_theta_cov, observed=pmData_theta)
+            p1_theta_cov = np.cov(np.vstack([sample for sample in sample_theta]), rowvar=False)
+            p1_theta_cov = np.diag(np.diag(p1_theta_cov))
+            p1_theta = pm.MvNormal('p1_theta', mu=pmTheta, cov=p1_theta_cov, observed=pmData_theta)
             
             # use a predetermined cov
-            p1_theta = pm.MvNormal('p1_theta', mu=pmTheta, cov=data_cov, observed=pmData_theta)
+            # p1_theta = pm.MvNormal('p1_theta', mu=pmTheta, cov=data_cov, observed=pmData_theta)
 
             
             for j in range(num_samples):
@@ -210,7 +210,6 @@ def sample_kl_divergences(sample_size_range, num_samples, num_draws,
                 print('player 1 progress: {}/{}'.format(progress, len(sample_size_range) * num_samples))
                 
                 # Generate the data
-
                 sample_theta = generate_fcn(sample_size)
                 pm.set_data({'pmData_theta': sample_theta})
 

@@ -93,7 +93,12 @@ def sample_kl_divergences(sample_size_range, num_samples, num_draws,
             pmData_x = pm.Data('pmData_x', sample_x)
 
             # Specify the observed variables)
-            pm_x = pm.MvNormal('pm_x', mu=pmTheta, cov=data_cov, observed=pmData_x)
+            
+            p2_x_cov = np.cov(np.vstack([sample for sample in sample_x]), rowvar=False)
+            p2_x_cov = np.diag(np.diag(p2_x_cov))
+            
+            pm_x = pm.MvNormal('pm_x', mu=pmTheta, cov=p2_x_cov, observed=pmData_x)
+            # pm_x = pm.MvNormal('pm_x', mu=pmTheta, cov=data_cov, observed=pmData_x)
             
             for j in range(num_samples):
                 # Show progress

@@ -77,13 +77,11 @@ def impute_with_mean(X):
     X[inds] = np.take(col_mean, inds[1])
     return X
 
-
 X_1 = impute_with_mean(X_1)
 X_2 = impute_with_mean(X_2)
 
 assert 0 == np.count_nonzero(np.isnan(X_1))
 assert 0 == np.count_nonzero(np.isnan(X_2))
-
 
 import parameters as pr
 import player_1 as player_1
@@ -94,7 +92,6 @@ import theano
 import theano.tensor as T
 reg_lambda = 1e-3
 from linear_regression_sampling import leverage_iid_sampling
-
 
 # set player 1's data to be the full data
 X_1, y_1 = X, y
@@ -114,12 +111,6 @@ def p1_generate_fcn(sample_size):
 
         theta_hat = np.linalg.inv(x.T @ x + reg_lambda * np.identity(x.shape[1])) @ x.T @ y  
         sample_theta[i] = theta_hat
-        # sample_x.append(x)
-        # sample_y.append(y)
-
-    # sample_x = np.asarray(sample_x).reshape(sample_size, local_size, -1)
-    # sample_y = np.asarray(sample_y).reshape(sample_size, local_size)
-    # return sample_x, sample_y, sample_theta
     return sample_theta
 
 
@@ -191,6 +182,8 @@ for i in range(max_iteration):
     # Current Shapley value
     sample_shapley_1 = np.multiply(0.5, sample_kl_1) + np.multiply(0.5, (np.subtract(sample_kl_12, sample_kl_2)))
     sample_shapley_2 = np.multiply(0.5, sample_kl_2) + np.multiply(0.5, (np.subtract(sample_kl_12, sample_kl_1)))
+
+    print("Shapley value 1 vs. 2:", sample_shapley_1, sample_shapley_2)
     p1_shapley_list.append(sample_shapley_1.flatten())
     p2_shapley_list.append(sample_shapley_2.flatten())
     
@@ -203,10 +196,6 @@ for i in range(max_iteration):
     emp_Fisher_1 = np.zeros((num_params, num_params))
     
     for theta_hat in data_theta1[0][0]:
-
-    # for j in range(len(data_theta1[0][0])):
-        # x,y  = data_x1[0][0][j], data_y1[0][0][j]
-        # theta_hat = np.linalg.inv(x.T @ x + reg_lambda * np.identity(x.shape[1])) @ x.T @ y
         sample_dlogL = player_1.dlogL(theta_hat, estimated_param)
         sample_dlogL.shape = (num_params, 1)
         emp_Fisher_1 += np.matmul(sample_dlogL, np.transpose(sample_dlogL))
