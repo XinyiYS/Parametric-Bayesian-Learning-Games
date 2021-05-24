@@ -61,7 +61,7 @@ name = 'KingH'
 for P2_DATA_RATIO in [0.01, 0.1, 0.5]:
     for P2_NAN_RATIO in [0.05, 0.1, 0.4]:
 
-        exp_dir = oj(name, "P2-{}_{}_{}".format(str(P1_DATA_SIZE), str(P1_LOCAL_SAMPLE_SIZE), str(P1_LOCAL_SAMPLE)) )
+        exp_dir = oj(name, "P2-{}_{}_{}".format(str(P2_DATA_RATIO), str(P2_NAN_RATIO)) )
         
         os.makedirs(exp_dir, exist_ok=True)
 
