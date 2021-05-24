@@ -141,6 +141,7 @@ latex/
 # experiment results
 CaliH/P1*
 CaliH/P2*
+CaliH/maxiter*
 
 KingH/P1*
 KingH/P2*
