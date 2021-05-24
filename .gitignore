@@ -137,3 +137,13 @@ latex/
 
 # pdf image files
 *.pdf
+
+# experiment results
+CaliH/P1*
+CaliH/P2*
+
+KingH/P1*
+KingH/P2*
+
+FaceA/P1*
+FaceA/P2*
