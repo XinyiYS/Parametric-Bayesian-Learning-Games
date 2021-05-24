@@ -35,8 +35,3 @@ max_sample_increment = 60
 max_iteration = 50
 
 
-# Player 1 
-
-
-# Player 2 data cov
-p2_data_cov = np.diag(np.full(num_params, 2.5))

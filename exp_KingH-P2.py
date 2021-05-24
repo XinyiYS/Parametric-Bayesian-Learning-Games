@@ -145,7 +145,11 @@ for P2_DATA_RATIO in [0.01, 0.1, 0.5]:
             beta = 1
             player_2.num_params = pr.num_params
             player_2.true_param = pr.true_param
-            player_2.data_cov_inv = pr.p2_data_cov + beta * (X_2.T @ X_2)
+
+            p2_data_cov = np.diag(np.full(pr.num_params, 2.5))
+
+            player_2.data_cov_inv = p2_data_cov + beta * (X_2.T @ X_2)
+            
             player_2.data_cov = np.linalg.inv(player_2.data_cov_inv)
             player_2.data_mean = np.linalg.inv(X_2.T @ X_2 + reg_lambda * np.identity(X_2.shape[1])) @ X_2.T @ y_2
             player_2.data_mean = np.squeeze(player_2.data_mean)
