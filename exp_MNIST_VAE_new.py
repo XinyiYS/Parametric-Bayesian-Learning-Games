@@ -217,13 +217,13 @@ for P1_DATA_SIZE, P2_DATA_SIZE in [(1000, 1000), (1000, 5000), (5000, 5000)]:
             # shape: c * latent_dim
             estimated_means = post_mean[:num_classes*latent_dim].reshape(num_classes, latent_dim)
 
-            p12_estimated_means.append(estimated_means)
+            p12_estimated_means.append(estimated_means.flatten())
 
             # shape: c * (latent_dim * latent_dim)
             M = latent_dim
             estimated_covs  = [post_cov[k * M:(k+1  )*M, k * M: ( k + 1) * M] for k in range(num_classes)   ]
             
-            p12_estimated_covs.append(estimated_covs)
+            p12_estimated_covs.append(estimated_covs.flatten())
 
             # Estimate the Fisher informations at the estimated parameter
             # player 1
