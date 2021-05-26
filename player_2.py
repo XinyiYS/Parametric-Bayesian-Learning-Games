@@ -33,8 +33,6 @@ def generate_and_plot(sample_size, ylim):
 # -- OLD -- #
 # x = T.dvector('x')
 # theta = T.dvector('theta')    
-# cov_hat = T.matrix('cov_hat')
-
 
 # # Define the logL function
 # logL_enum = T.dot(T.transpose(x - theta), np.linalg.inv(cov_hat))

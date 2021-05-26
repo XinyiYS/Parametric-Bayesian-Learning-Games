@@ -125,7 +125,6 @@ dlogL = theano.function([x, theta, cov_hat], T.grad(logL, theta))
 
 
 
-
 def estimate_fisher_information(sample_size):
     # Generate some samples
     sample_theta = generate(sample_size)
