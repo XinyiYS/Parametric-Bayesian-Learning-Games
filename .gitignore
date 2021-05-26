@@ -138,6 +138,9 @@ latex/
 # pdf image files
 *.pdf
 
+# original code
+/original/*
+
 # experiment results
 CaliH/P1*
 CaliH/P2*
@@ -151,3 +154,7 @@ FaceA/P2*
 
 
 MNIST_VAE/P1*
+
+*/figures/*
+*/table/*
+

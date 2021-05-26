@@ -76,11 +76,9 @@ import theano.tensor as T
 P2_BALANCE = 0.1
 P2_DATA_SIZE = 1000
 
-name = 'MNIST_VAE'
+name = 'MNIST_VAE-larger-sampling'
 
-for P1_DATA_SIZE, P2_DATA_SIZE in [(1000, 5000), (5000, 5000)]:   
-# for P1_DATA_SIZE in [1000, 5000]:
-    # for P2_DATA_SIZE in [1000, 5000]:
+for P1_DATA_SIZE, P2_DATA_SIZE in [(1000, 1000), (1000, 5000), (5000, 5000)]:   
     for P1_BALANCE in np.linspace(0.1, 0.9, 9):
 
         P1_PROBS = [1 - P1_BALANCE, P1_BALANCE,  0, 0, 0, 0, 0, 0, 0, 0]

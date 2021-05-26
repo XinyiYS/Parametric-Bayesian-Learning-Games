@@ -11,9 +11,9 @@ num_samples = 3
 #fisher_sample_size = 20000
 #posterior_sample_size = 5000
 #tuning_step = 3000
-fisher_sample_size = 1000
-posterior_sample_size = 1000
-tuning_step = 500
+fisher_sample_size = 10000
+posterior_sample_size = 2000
+tuning_step = 2000
 
 
 num_classes = 10

@@ -133,70 +133,7 @@ def sample_kl_divergences(sample_size_range, num_samples, num_draws,
                 # Update progress
                 progress += 1
 
-            '''
 
-            # Data holders
-            pmData_Mu_1 = [ pm.Data('pmData_Mu_1-class_' + str(c), sampled_vae_mus_1[i][0][c]) for c in range(num_classes) ]
-            pmData_Mu_2 = [ pm.Data('pmData_Mu_2-class_' + str(c), sampled_vae_mus_1[i][0][c]) for c in range(num_classes) ]
-                        
-            # From player 1
-            print("Player 1 sampled log vars:")
-            print(sampled_vae_logvars_1[i])
-            print('Cov shapes: ')
-            print(np.asarray(sampled_vae_logvars_1[i][0][0]).shape, np.diag(np.exp( np.mean(sampled_vae_logvars_1[i][0][0], axis=0).squeeze() )).shape )
-
-            # p1_covs = [np.diag(np.exp( np.mean(sampled_vae_logvars_1[i][0][c], axis=0).squeeze() )) for c in range(num_classes)]
-
-            pmMu_1 = [pm.MvNormal('pmMu_1-class_'+str(c), 
-                mu=pmMus[c], 
-                cov=np.diag(np.exp(np.mean(sampled_vae_logvars_1[i][0][c], axis=0).squeeze() )),
-                observed=pmData_Mu_1[c]) 
-            for c in range(num_classes)]
-
-            # From player 2
-            # p2_covs = [np.diag(np.exp(  np.mean(sampled_vae_logvars_2[i][0][c], axis=0).squeeze()  ) ) for c in range(num_classes)]
-            pmMu_2 = [pm.MvNormal('pmMu_2-class_'+str(c), 
-                mu=pmMus[c], 
-                cov=np.diag(np.exp(np.mean(sampled_vae_logvars_2[i][0][c], axis=0).squeeze()  ) ),
-                observed=pmData_Mu_2[c]) 
-            for c in range(num_classes)]
-
-
-            for j in range(num_samples):
-                # Show progress
-                print('player 1+2 progress: {}/{}'.format(
-                    progress, len(sample_size_range) * num_samples))
-                
-                # Assign the data
-                for c in range(num_classes):
-                    pm.set_data({'pmData_Mu_1-class_' + str(c): sampled_vae_mus_1[i][j][c]})
-    
-                    pm.set_data({'pmData_Mu_2-class_' + str(c): sampled_vae_mus_2[i][j][c]})
-                
-                # Sample from the posterior
-                pmTrace = pm.sample(draws=num_draws, 
-                                    cores=pr.max_num_cores, 
-                                    tune=pr.tuning_step, 
-                                    progressbar=False)
-                summary = pm.stats.summary(pmTrace)
-                
-                # Get the sample mean and covariance of the samples
-                post_mean = np.array(summary.loc[:,'mean'])
-                post_cov = pm.trace_cov(pmTrace)
-                                
-                # Assuming Normal distribution for the posterior,
-                # estimate the KL divergence
-                M = latent_dim
-                post_covs = [ post_cov[k*M:(k+1)*M, k*M:(k+1)*M] for k in range(post_cov.shape[0] // M)]
-                post_means = post_mean.reshape(num_classes, latent_dim)
-
-                kl = sum([div.compute_KL(post_mean, post_cov, prior_mean, prior_cov) for post_mean, post_cov in zip(post_means, post_covs)  ])
-                estimated_kl.append(kl)
-
-
-                # Update progress
-                progress += 1
-            '''
         estimated_kl_values.append(estimated_kl)  
     
     return estimated_kl_values, post_mean, post_cov, summary
