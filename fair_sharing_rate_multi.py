@@ -69,9 +69,9 @@ base_sample_increment = pr.base_sample_increment
 max_sample_increment = pr.max_sample_increment
 max_iteration = pr.max_iteration
 
-p1_sample_size = base_sample_size
-p2_sample_size = base_sample_size
-p3_sample_size = base_sample_size
+# p1_sample_size = base_sample_size
+# p2_sample_size = base_sample_size
+# p3_sample_size = base_sample_size
 
 player_sample_sizes = [base_sample_size, base_sample_size, base_sample_size]
 
@@ -223,9 +223,11 @@ for i in range(max_iteration):
     p2_FI_det_list.append(det_F2)
     p3_FI_det_list.append(det_F3)
 
-    player_FI_dets = [det_F1, det_F2, det_F3]
 
+    player_FI_dets = [det_F1, det_F2, det_F3]
     max_FI = max(player_FI_dets)
+
+    max_FI_sample_count = player_sample_sizes[player_FI_dets.index(max_FI)]
 
     for i, (FI, sample_size) in enumerate(zip(player_FI_dets, player_sample_sizes)):
         
@@ -234,7 +236,7 @@ for i in range(max_iteration):
 
         else:
             rate = np.power(max_FI / FI, 1.0 / num_params)
-            target = round(sample_size * rate)
+            target = round(max_FI_sample_count * rate)
             if sample_size < target:
                 sample_size += min(target - sample_size, max_sample_increment)
 
@@ -242,9 +244,13 @@ for i in range(max_iteration):
 
         player_sample_sizes[i] = int(player_sample_sizes[i])
 
-'''
+    '''
+
+    p1_sample_size, p2_sample_size, p3_sample_size = \
+    player_sample_sizes[0], player_sample_sizes[1], player_sample_sizes[2]
 
     if det_F1 > det_F2:
+        print("F1 large" + '*' * 60)
 
         p1_sample_size += base_sample_increment
 
@@ -256,12 +262,14 @@ for i in range(max_iteration):
 
         # for player 3
         rate = np.power(det_F1 / det_F3, 1.0/num_params)
-        target = round(p3_sample_size * rate)
+        target = round(p1_sample_size * rate)
         if p3_sample_size < target:
             p3_sample_size += min(target - p2_sample_size, max_sample_increment)
             
     else: 
         if det_F2 > det_F1:
+            print("F2 large" + '-' * 60)
+          
             p2_sample_size += base_sample_increment
 
             # for player 1
@@ -272,20 +280,19 @@ for i in range(max_iteration):
 
             # for player 3
             rate = np.power(det_F2 / det_F3, 1.0/num_params)
-            target = round(p3_sample_size * rate)
+            target = round(p2_sample_size * rate)
             if p3_sample_size < target:
                 p3_sample_size += min(target - p1_sample_size, max_sample_increment)
 
         else:
             p1_sample_size += base_sample_increment
             p2_sample_size += base_sample_increment   
-            p3_sample_size += base_sample_increment   
+            p3_sample_size += base_sample_increment
 
-    p1_sample_size = int(p1_sample_size)
-    p2_sample_size = int(p2_sample_size)
-    p3_sample_size = int(p3_sample_size)
-'''
+    player_sample_sizes[0], player_sample_sizes[1], player_sample_sizes[2]=\
+    int(p1_sample_size), int(p2_sample_size), int(p3_sample_size)
 
+    '''
 
 
 np.savetxt("cumulative_1.txt", p1_sample_size_list)
@@ -356,3 +363,18 @@ plt.savefig('output_shapley_fair.pdf',  bbox_inches='tight')
 plt.clf()    
 plt.close()
 
+
+plt.figure(figsize=(6, 4))
+
+# Plot the shapley value
+plt.plot(p1_FI_det_list, linestyle='-', color='C0', label='P1')
+plt.plot(p2_FI_det_list, linestyle='--', color='C1', label='P2')
+plt.plot(p3_FI_det_list, linestyle='-.', color='C2', label='P3')
+plt.ylabel('FI Determinant')
+plt.xlabel('Iterations')
+plt.legend()
+plt.tight_layout()
+plt.savefig('fi_determinant.pdf',  bbox_inches='tight')
+# plt.show()
+plt.clf()    
+plt.close()

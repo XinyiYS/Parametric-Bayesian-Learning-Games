@@ -16,11 +16,11 @@ posterior_sample_size = 1000
 tuning_step = 1000
 
 # The true parameters
-num_params = 4 
-true_param = [-1, 0, 2, 3]
+# num_params = 4 
+# true_param = [-1, 0, 2, 3]
 
-# num_params = 6 # 
-# true_param = [0.21031031,  0.04282435, -0.10801392,  0.09709814,  0.00516233, -0.01044389]
+num_params = 6 # 
+true_param = [0.21031031,  0.04282435, -0.10801392,  0.09709814,  0.00516233, -0.01044389]
 # best_lambda = 2.47e-07
 
 
@@ -31,5 +31,5 @@ prior_cov = np.diag(np.repeat(1, num_params))
 # For fair data sharing rate
 base_sample_size = 20
 base_sample_increment = 10
-max_sample_increment = 40
-max_iteration = 10
+max_sample_increment = 60
+max_iteration = 30
