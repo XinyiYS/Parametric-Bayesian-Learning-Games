@@ -48,7 +48,7 @@ with open(oj('settings.txt'), 'w') as f:
     f.write("tuning_step =  " + str(pr.tuning_step)+ '\n')
     f.write("num_params =  " + str(pr.num_params)+ '\n')
     f.write("true_param =  " + str(pr.true_param)+ '\n')
-    f.write("best_lambda =  " + str(pr.best_lambda)+ '\n')
+    # f.write("best_lambda =  " + str(pr.best_lambda)+ '\n')
 
     f.write("base_sample_size =  " + str(pr.base_sample_size)+ '\n')
     f.write("base_sample_increment =  " + str(pr.base_sample_increment)+ '\n')
@@ -73,6 +73,8 @@ p1_sample_size = base_sample_size
 p2_sample_size = base_sample_size
 p3_sample_size = base_sample_size
 
+player_sample_sizes = [base_sample_size, base_sample_size, base_sample_size]
+
 p1_sample_size_list = []
 p2_sample_size_list = []
 p3_sample_size_list = []
@@ -85,6 +87,9 @@ p1_shapley_list = []
 p2_shapley_list = []
 p3_shapley_list = []
 
+p1_FI_det_list = []
+p2_FI_det_list = []
+p3_FI_det_list = []
 
 # prior for unknown noises
 player_3_noise_std_estimate = player_3.noise_std_prior
@@ -94,46 +99,48 @@ print("Testing multiplayer scenario for 3 players with {} iterations.".format(ma
 for i in range(max_iteration):
     # Progress
     print("Iteration: {}/{} ".format(i + 1, max_iteration))
-    print("Sample size: {} + {} + {}".format(p1_sample_size, p2_sample_size, p3_sample_size))
+    print("Sample size: {}".format(player_sample_sizes))
+
 
     # Record current sample sizes
-    p1_sample_size_list.append(p1_sample_size)
-    p2_sample_size_list.append(p2_sample_size)
-    p3_sample_size_list.append(p3_sample_size)
+    p1_sample_size_list.append(player_sample_sizes[0])
+    p2_sample_size_list.append(player_sample_sizes[1])
+    p3_sample_size_list.append(player_sample_sizes[2])
     
+
 
     # Generate the sample kl divergences
     sample_kl_1, data_x1, data_y1 = player_1.sample_kl_divergences(
-        [p1_sample_size], 1, posterior_sample_size, prior_mean, prior_cov)
+        [player_sample_sizes[0]], 1, posterior_sample_size, prior_mean, prior_cov)
     
     sample_kl_2, data_x2 = player_2.sample_kl_divergences(
-        [p2_sample_size], 1, posterior_sample_size, prior_mean, prior_cov)
+        [player_sample_sizes[1]], 1, posterior_sample_size, prior_mean, prior_cov)
     
     sample_kl_3, data_x3, data_y3 = player_3.sample_kl_divergences(
-        [p3_sample_size], 1, posterior_sample_size, prior_mean, prior_cov, noise_std_estimate=player_3_noise_std_estimate)
+        [player_sample_sizes[2]], 1, posterior_sample_size, prior_mean, prior_cov, noise_std_estimate=player_3_noise_std_estimate)
     
     print("Iteration: {}, data_y3 shape: {}.".format(i+1, data_y3[0][0].shape))
 
     sample_kl_12, post_mean = player_12.sample_kl_divergences(
-        [p1_sample_size + p2_sample_size], 1,
+        [player_sample_sizes[0] + player_sample_sizes[1]], 1,
         posterior_sample_size, prior_mean, prior_cov, 
         data_x1, data_y1, data_x2)
     
     sample_kl_13, post_mean = player_13.sample_kl_divergences(
-        [p1_sample_size + p3_sample_size], 1,
+        [player_sample_sizes[0] + player_sample_sizes[2]], 1,
         posterior_sample_size, prior_mean, prior_cov, 
         data_x1, data_y1, 
         data_x3, data_y3, noise_std_estimate=player_3_noise_std_estimate)
 
     sample_kl_23, post_mean = player_23.sample_kl_divergences(
-        [p2_sample_size + p3_sample_size], 1,
+        [player_sample_sizes[1] + player_sample_sizes[2]], 1,
         posterior_sample_size, prior_mean, prior_cov, 
         data_x2, 
         data_x3, data_y3, noise_std_estimate=player_3_noise_std_estimate)
 
 
     sample_kl_123, post_mean = player_123.sample_kl_divergences(
-        [p1_sample_size + p2_sample_size + p3_sample_size], 1,
+        [player_sample_sizes[0] + player_sample_sizes[1] + player_sample_sizes[2]], 1,
         posterior_sample_size, prior_mean, prior_cov, 
         data_x1, data_y1, 
         data_x2,
@@ -190,9 +197,9 @@ for i in range(max_iteration):
 
     # player 3
     # estimate the sample variance in the y of player 3 and use the sample var as posterior
-    player_3_sample_variance_y = tvar(data_y3[0][0])
-    player_3_noise_std_estimate =  np.sqrt(player_3_sample_variance_y)
-    print("latest p3 noise std estimate: ", player_3_noise_std_estimate)
+    # player_3_sample_variance_y = tvar(data_y3[0][0])
+    # player_3_noise_std_estimate =  np.sqrt(player_3_sample_variance_y)
+    # print("latest p3 noise std estimate: ", player_3_noise_std_estimate)
     
     emp_Fisher_3 = np.zeros((num_params, num_params))
     for j in range(len(data_x3[0][0])):
@@ -211,6 +218,31 @@ for i in range(max_iteration):
     det_F1 = np.linalg.det(emp_Fisher_1)
     det_F2 = np.linalg.det(emp_Fisher_2)
     det_F3 = np.linalg.det(emp_Fisher_3)
+
+    p1_FI_det_list.append(det_F1)
+    p2_FI_det_list.append(det_F2)
+    p3_FI_det_list.append(det_F3)
+
+    player_FI_dets = [det_F1, det_F2, det_F3]
+
+    max_FI = max(player_FI_dets)
+
+    for i, (FI, sample_size) in enumerate(zip(player_FI_dets, player_sample_sizes)):
+        
+        if FI == max_FI:
+            player_sample_sizes[i] += base_sample_increment
+
+        else:
+            rate = np.power(max_FI / FI, 1.0 / num_params)
+            target = round(sample_size * rate)
+            if sample_size < target:
+                sample_size += min(target - sample_size, max_sample_increment)
+
+            player_sample_sizes[i] = int(sample_size)
+
+        player_sample_sizes[i] = int(player_sample_sizes[i])
+
+'''
 
     if det_F1 > det_F2:
 
@@ -252,6 +284,8 @@ for i in range(max_iteration):
     p1_sample_size = int(p1_sample_size)
     p2_sample_size = int(p2_sample_size)
     p3_sample_size = int(p3_sample_size)
+'''
+
 
 
 np.savetxt("cumulative_1.txt", p1_sample_size_list)
@@ -262,9 +296,9 @@ np.savetxt("shapley_fair_1.txt", p1_shapley_list)
 np.savetxt("shapley_fair_2.txt", p2_shapley_list)
 np.savetxt("shapley_fair_3.txt", p3_shapley_list)
 
-
-
-
+np.savetxt("FI_det_1.txt", p1_FI_det_list)
+np.savetxt("FI_det_2.txt", p2_FI_det_list)
+np.savetxt("FI_det_3.txt", p3_FI_det_list)
 
 
 plt.style.use('seaborn')
@@ -292,34 +326,33 @@ plt.rc('lines', linewidth=LINEWIDTH)  # fontsize of the figure title
 
 
 
-
 plt.figure(figsize=(6, 4))
 
 # Plot sample sizes
 plt.plot(p1_sample_size_list, linestyle='-', color='C0',  label='P1')
 plt.plot(p2_sample_size_list, linestyle='--', color='C1', label='P2')
 plt.plot(p3_sample_size_list, linestyle='-.', color='C2', label='P3')
-plt.ylabel('Cumulative sample size')
+plt.ylabel('Cumulative count')
 plt.xlabel('Iterations')
 plt.legend()
 plt.tight_layout()
-
-plt.savefig('output_sharing_rate.pdf')
+plt.savefig('output_sharing_rate.pdf',  bbox_inches='tight')
 # plt.show()
 plt.clf()    
 plt.close()
 
-plt.figure(figsize=(8, 6))
+plt.figure(figsize=(6, 4))
 
 # Plot the shapley value
-plt.plot(p1_shapley_list[:,0], linestyle='-', color='C0', label='P1')
-plt.plot(p2_shapley_list[:,0], linestyle='--', color='C1', label='P2')
-plt.plot(p3_shapley_list[:,0], linestyle='-.', color='C2', label='P3')
+plt.plot(p1_shapley_list, linestyle='-', color='C0', label='P1')
+plt.plot(p2_shapley_list, linestyle='--', color='C1', label='P2')
+plt.plot(p3_shapley_list, linestyle='-.', color='C2', label='P3')
 plt.ylabel('Shapley value')
 plt.xlabel('Iterations')
 plt.legend()
 plt.tight_layout()
-plt.savefig('output_shapley_fair.pdf')
+plt.savefig('output_shapley_fair.pdf',  bbox_inches='tight')
 # plt.show()
 plt.clf()    
 plt.close()
+

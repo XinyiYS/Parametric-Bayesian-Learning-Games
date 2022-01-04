@@ -22,10 +22,10 @@ x_mean = 0
 x_std_dev = 2.25
 x_var = x_std_dev * x_std_dev
 domain = [-10, 10]
-noise_std_dev = 1
+noise_std_dev = 1.5
 noise_var = noise_std_dev * noise_std_dev
 
-noise_std_prior = 1.5
+noise_std_prior = 1.8
 noise_var_prior = noise_std_prior * noise_std_prior
 
 # Initialize the data generation parameters & function
