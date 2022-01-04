@@ -154,7 +154,9 @@ FaceA/P2*
 
 
 MNIST_VAE/P1*
+MNIST_VAE-larger-sampling/
 
+multiplayer/
 */figures/*
 */table/*
 

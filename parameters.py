@@ -1,7 +1,7 @@
 import numpy as np
 
 # Number of cores to be used
-max_num_cores = 2
+max_num_cores = 8
 
 # Sample size range & Number of samples to be generated
 sample_size_range = range(10, 25, 10)
@@ -31,5 +31,5 @@ prior_cov = np.diag(np.repeat(1, num_params))
 # For fair data sharing rate
 base_sample_size = 20
 base_sample_increment = 10
-max_sample_increment = 50
+max_sample_increment = 60
 max_iteration = 30
