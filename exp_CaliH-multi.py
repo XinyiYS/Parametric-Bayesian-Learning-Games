@@ -375,10 +375,10 @@ for P1_DATA_SIZE in [1000, 5000]:
 
         for player_index in range(N):
 
-            np.savetxt('cumulative_{}.txt'.format(str(player_index+1)), player_sample_size_lists[player_index])
+            np.savetxt(oj(exp_dir, 'cumulative_{}.txt'.format(str(player_index+1))), player_sample_size_lists[player_index])
             
-            np.savetxt('shapley_fair_{}.txt'.format(str(player_index+1)), player_shapley_lists[player_index])
+            np.savetxt(oj(exp_dir, 'shapley_fair_{}.txt'.format(str(player_index+1))), player_shapley_lists[player_index])
             
-            np.savetxt('FI_det_{}.txt'.format(str(player_index+1)), player_FI_lists[player_index])
+            np.savetxt(oj(exp_dir, 'FI_det_{}.txt'.format(str(player_index+1))), player_FI_lists[player_index])
 
         log_file.close()
