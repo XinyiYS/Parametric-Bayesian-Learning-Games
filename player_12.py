@@ -72,6 +72,7 @@ def get_theta_hat(x, y, reg_lambda=1e-3):
 
 
 
+
 def sample_kl_divergences(sample_size_range, num_samples, num_draws,
                           prior_mean, prior_cov,
                           data_theta_1,
@@ -102,8 +103,6 @@ def sample_kl_divergences(sample_size_range, num_samples, num_draws,
                                   shape=(1, num_params))
             
             # Data holders
-            # pmData_x_1 = pm.Data('pmData_x_1', data_x_1[i][0])
-            # pmData_y_1 = pm.Data('pmData_y_1', data_y_1[i][0])
 
             pmData_theta_1 = pm.Data('pmData_theta_1', data_theta_1[i][0])
 

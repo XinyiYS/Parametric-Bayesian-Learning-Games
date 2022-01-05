@@ -127,6 +127,7 @@ def sample_kl_divergences(sample_size_range, num_samples, num_draws,
                 # Assign the data
                 pm.set_data({'pmData_x_1': data_x_1[i][j]})
                 pm.set_data({'pmData_y_1': data_y_1[i][j]})
+
                 pm.set_data({'pmData_x_2': data_x_2[i][j]})
                 
                 pm.set_data({'pmData_x_3': data_x_3[i][j]})

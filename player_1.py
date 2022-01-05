@@ -1,9 +1,12 @@
 import numpy as np
 import matplotlib.pyplot as plt
+
 import theano
 import theano.tensor as T
-theano.config.compute_test_value = 'off'
+
 import pymc3 as pm
+theano.config.compute_test_value = 'off'
+theano.config.compute_test_value = 'ignore'
 
 import regression_game as div
 import fourier as fr
@@ -31,7 +34,9 @@ def generate(sample_size):
     # generate the output
     y = true_function.evaluate(x)
     y = y + np.random.normal(loc=0.0, scale=noise_std_dev, size=sample_size)    
+
     return x,y
+
 
 def generate_and_plot(sample_size, ylim):
     x,y = generate(sample_size)
@@ -108,75 +113,53 @@ dlogL = theano.function([x, y, theta], T.grad(logL, theta))
 
 # -- NEW -- # with estimated cov
 # Input variables
-x = T.dvector('x')
-theta = T.dvector('theta')    
-cov_hat = T.dmatrix('cov_hat')
 
-# Define the logL function
-logL_enum = T.dot(T.transpose(x - theta), T.nlinalg.matrix_inverse(cov_hat))
-logL_enum = T.dot(logL_enum, x - theta) / -2
-logL_enum = T.exp(logL_enum)
-logL_denom = T.sqrt(T.pow((2 * np.pi), num_params) * T.nlinalg.det(cov_hat)) 
+def get_dLogL(num_params):
+    x = T.dvector('x')
+    theta = T.dvector('theta')    
+    cov_hat = T.dmatrix('cov_hat')
 
-logL = T.log(logL_enum/logL_denom)
+    # Define the logL function
+    logL_enum = T.dot(T.transpose(x - theta), T.nlinalg.matrix_inverse(cov_hat))
+    logL_enum = T.dot(logL_enum, x - theta) / -2
+    logL_enum = T.exp(logL_enum)
+    logL_denom = T.sqrt(T.pow((2 * np.pi), num_params) * T.nlinalg.det(cov_hat)) 
 
-# The dlog likelihood function
-dlogL = theano.function([x, theta, cov_hat], T.grad(logL, theta))
+    logL = T.log(logL_enum/logL_denom)
 
+    # The dlog likelihood function
+    dlogL = theano.function([x, theta, cov_hat], T.grad(logL, theta))
 
+    return dlogL
 
-def estimate_fisher_information(sample_size):
-    # Generate some samples
-    sample_theta = generate(sample_size)
-    
-    # Estimate the Fisher information
+def estimate_FI(player_data, estimated_param, num_params):
+
+    [data_theta1] = player_data
+
     emp_Fisher = np.zeros((num_params, num_params))
-    for i in range(sample_size):
-        theta_hat = sample_theta[i]
-        cov_hat = None
+    
+    p1_theta_cov = np.cov(np.concatenate([sample for sample in data_theta1[0]] ), rowvar=False)
 
-        sample_dlogL = dlogL(None , true_param)
-        
-
+    dlogL = get_dLogL(num_params)
+    for theta_hat in data_theta1[0][0]:
+        sample_dlogL = dlogL(theta_hat, estimated_param, p1_theta_cov)
         sample_dlogL.shape = (num_params, 1)
         emp_Fisher += np.matmul(sample_dlogL, np.transpose(sample_dlogL))
-    emp_Fisher = emp_Fisher / sample_size
+    emp_Fisher = emp_Fisher / len(data_theta1[0][0])
+
+
     return emp_Fisher
 
+
 """Sample KL divergences from player 1"""
-# Function for computing the mean of output given an input and a parameter
-# The same for all players
-def compute_mean(x, theta):
-    mu_y = 0
-    L = domain[1] - domain[0]
-    freq_cos = 1
-    freq_sin = 1
-    
-    for i in range(num_params):
-        # Compute the basis value
-        value = 1
-        if i>0:
-            if ((i % 2) == 1):
-                # Odd
-                value = np.cos(2 * freq_cos * np.pi / L * x)                
-                freq_cos = freq_cos + 1
-            else:
-                # Even
-                value = np.sin(2 * freq_sin * np.pi / L * x)                
-                freq_sin = freq_sin + 1
-        # Multiply by its coefficient
-        value = theta[0][i] * value        
-        # Sum all values
-        mu_y = mu_y + value
-    return mu_y
-
-
 
 def sample_kl_divergences(sample_size_range, num_samples, num_draws,
-                          prior_mean, prior_cov, generate_fcn=None):
-    
+                          prior_mean, prior_cov, num_params,
+                          generate_fcn=None):
+
     if generate_fcn is None:
         generate_fcn = generate
+    
 
     # Computed outputs
     estimated_kl_values = []
@@ -206,6 +189,7 @@ def sample_kl_divergences(sample_size_range, num_samples, num_draws,
             pmTheta = pm.MvNormal('pmTheta', mu=prior_mean, cov=prior_cov, shape=(1, num_params))
             
             # Data holders
+
             sample_theta = generate_fcn(sample_size)
 
             pmData_theta = pm.Data('pmData_theta', sample_theta)
@@ -296,6 +280,46 @@ def sample_kl_divergences(sample_size_range, num_samples, num_draws,
 
 
 '''
+# Function for computing the mean of output given an input and a parameter
+# The same for all players
+def compute_mean(x, theta):
+    mu_y = 0
+    L = domain[1] - domain[0]
+    freq_cos = 1
+    freq_sin = 1
+    
+    for i in range(num_params):
+        # Compute the basis value
+        value = 1
+        if i>0:
+            if ((i % 2) == 1):
+                # Odd
+                value = np.cos(2 * freq_cos * np.pi / L * x)                
+                freq_cos = freq_cos + 1
+            else:
+                # Even
+                value = np.sin(2 * freq_sin * np.pi / L * x)                
+                freq_sin = freq_sin + 1
+        # Multiply by its coefficient
+        value = theta[0][i] * value        
+        # Sum all values
+        mu_y = mu_y + value
+    return mu_y
+
+def estimate_fisher_information(sample_size):
+    # Generate some samples
+    sample_theta = generate(sample_size)
+    
+    # Estimate the Fisher information
+    emp_Fisher = np.zeros((num_params, num_params))
+    for i in range(sample_size):
+        theta_hat = sample_theta[i]
+        cov_hat = None
+        sample_dlogL = dlogL(None , true_param)
+        sample_dlogL.shape = (num_params, 1)
+        emp_Fisher += np.matmul(sample_dlogL, np.transpose(sample_dlogL))
+    emp_Fisher = emp_Fisher / sample_size
+    return emp_Fisher
 
 # original definition for observing two random variables X, Y or A, B
 def sample_kl_divergences(sample_size_range, num_samples, num_draws,

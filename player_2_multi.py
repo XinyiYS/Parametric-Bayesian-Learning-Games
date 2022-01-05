@@ -46,6 +46,7 @@ logL = T.log(logL_enum/logL_denom)
 # The dlog likelihood function
 dlogL = theano.function([x, theta], T.grad(logL, theta))
 
+'''
 def estimate_fisher_information(sample_size):
     emp_Fisher = np.zeros((num_params, num_params))
     for i in range(sample_size):
@@ -59,6 +60,21 @@ def estimate_fisher_information(sample_size):
         emp_Fisher += np.matmul(sample_dlogL, np.transpose(sample_dlogL))
     emp_Fisher = emp_Fisher / sample_size
     return emp_Fisher
+'''
+
+def estimate_FI(player_data, estimated_param, num_params):
+    # player 2
+    [data_x2] = player_data
+    emp_Fisher_2 = np.zeros((num_params, num_params))
+    for data_point_x in data_x2[0][0]:
+        sample_dlogL = dlogL(data_point_x, estimated_param)
+        sample_dlogL.shape = (num_params, 1)
+        emp_Fisher_2 += np.matmul(sample_dlogL, np.transpose(sample_dlogL))
+    emp_Fisher_2 = emp_Fisher_2 / len(data_x2[0][0])
+    
+    return emp_Fisher_2
+
+
 
 ### Sample KL divergences from the player ###
 def sample_kl_divergences(sample_size_range, num_samples, num_draws,

@@ -10,6 +10,7 @@ import numpy as np
 import pymc3 as pm
 import matplotlib.pyplot as plt
 
+import player_1_multi as p1
 import player_2_multi as p2
 import player_3_multi as p3
 import regression_game as div
@@ -37,37 +38,76 @@ def estimate_fisher_information(sample_size):
     emp_Fisher = emp_Fisher / sample_size
     return emp_Fisher
 
-### Sample KL divergences from player 3+2 ###
-# Function for computing the mean of output given an input and a parameter
-# This is for player 3
-def compute_mean(x, theta):
-    mu_y = 0
-    L = p3.domain[1] - p3.domain[0]
-    freq_cos = 1
-    freq_sin = 1
+
+### Sample KL divergences ###
+
+def _set_data_holder_0(i, parameter_variable, player_data):
+    pmTheta = parameter_variable
+    [data_x_1, data_y_1] = player_data
+
+    pmData_x_1 = pm.Data('pmData_x_1', data_x_1[i][0])
+    pmData_y_1 = pm.Data('pmData_y_1', data_y_1[i][0])
+
+
+    pm_x_1 = pm.Normal('pm_x_1', mu=p1.x_mean, sigma=p1.x_std_dev, observed=pmData_x_1)
+    pm_y_1 = pm.Normal('pm_y_1', mu=p1.compute_mean(pm_x_1, pmTheta), 
+                     sigma=p1.noise_std_dev, observed=pmData_y_1)
+
+    return [data_x_1, data_y_1], ['pmData_x_1', 'pmData_y_1']
+
+
+
+def _set_data_holder_1(i, parameter_variable, player_data):
+    pmTheta = parameter_variable
+    [data_x_2] = player_data
+
+    pmData_x_2 = pm.Data('pmData_x_2', data_x_2[i][0])
+
+    pm_x_2 = pm.MvNormal('pm_x_2', mu=pmTheta, cov=p2.data_cov, observed=pmData_x_2)
+
+    return [data_x_2], ['pmData_x_2']
+
+
+def _set_data_holder_2(i, parameter_variable, player_data):
+    pmTheta = parameter_variable
+    [data_x_3, data_y_3, noise_std_estimate] = player_data
+
+    pmData_x_3 = pm.Data('pmData_x_3', data_x_3[i][0])
+    pmData_y_3 = pm.Data('pmData_y_3', data_y_3[i][0])
+
+    pm_x_3 = pm.Normal('pm_x_3', mu=p3.x_mean, sigma=p3.x_std_dev, observed=pmData_x_3)
+    pm_y_3 = pm.Normal('pm_y_3', mu=p3.compute_mean(pm_x_3, pmTheta), 
+                     sigma=noise_std_estimate, observed=pmData_y_3)
+
+    return [data_x_3, data_y_3], ['pmData_x_3', 'pmData_y_3']
+
+
+def set_data_holder(player_index, sample_index_i, parameter_variable, player_data):
+
+    if player_index == 0:
+        return _set_data_holder_0(sample_index_i, parameter_variable, player_data)
     
-    for i in range(num_params):
-        # Compute the basis value
-        value = 1
-        if i>0:
-            if ((i % 2) == 1):
-                # Odd
-                value = np.cos(2 * freq_cos * np.pi / L * x)                
-                freq_cos = freq_cos + 1
-            else:
-                # Even
-                value = np.sin(2 * freq_sin * np.pi / L * x)                
-                freq_sin = freq_sin + 1
-        # Multiply by its coefficient
-        value = theta[0][i] * value        
-        # Sum all values
-        mu_y = mu_y + value
-    return mu_y
+    elif player_index == 1:
+        return _set_data_holder_1(sample_index_i, parameter_variable, player_data)
+    
+    elif player_index == 2:
+        return _set_data_holder_2(sample_index_i, parameter_variable, player_data)
+    
+    elif player_index == 3:
+        return _set_data_holder_3(sample_index_i, parameter_variable, player_data)
+
+    elif player_index == 4:
+        return _set_data_holder_4(sample_index_i, parameter_variable, player_data)
+
+    else:
+        raise NotImplementedError("Only up to 5 players.")
+
 
 def sample_kl_divergences(sample_size_range, num_samples, num_draws,
                           prior_mean, prior_cov,
-                          data_x_2,
-                          data_x_3, data_y_3, noise_std_estimate=p3.noise_std_prior):  
+                          player_index_data_dict):
+                          # data_x_2,
+                          # data_x_3, data_y_3, noise_std_estimate=p3.noise_std_prior):  
     # Computed outputs
     estimated_kl_values = []
     
@@ -94,12 +134,29 @@ def sample_kl_divergences(sample_size_range, num_samples, num_draws,
                                   shape=(1, num_params))
             
             # Data holders
+            
+            data_holders_list = [] # a list (length = number of players) of list (each corresponding to the number of holders the player needs)
+
+            variables_list = [] # a list (length = number of players) of list (each corresponding to the number of variables the player needs)
+
+
+            for player_index, player_data in player_index_data_dict.items():
+
+                # a list of data holders, since some player index may need more than one
+                # a list of data holders' variable names in pymc3 model, later used for setting the data
+                observed_datas, data_holder_names = set_data_holder(player_index, i, pmTheta, player_data)
+
+                data_holders_list.append([observed_datas, data_holder_names])
+
+            '''
             pmData_x_2 = pm.Data('pmData_x_2', data_x_2[i][0])
 
             pmData_x_3 = pm.Data('pmData_x_3', data_x_3[i][0])
             pmData_y_3 = pm.Data('pmData_y_3', data_y_3[i][0])
             
             # Specify the observed variables
+            
+
             # From player 2
             pm_x_2 = pm.MvNormal('pm_x_2', mu=pmTheta, cov=p2.data_cov, observed=pmData_x_2)
             
@@ -108,19 +165,29 @@ def sample_kl_divergences(sample_size_range, num_samples, num_draws,
             pm_x_3 = pm.Normal('pm_x_3', mu=p3.x_mean, sigma=p3.x_std_dev, observed=pmData_x_3)
             pm_y_3 = pm.Normal('pm_y_3', mu=compute_mean(pm_x_3, pmTheta), 
                              sigma=noise_std_estimate, observed=pmData_y_3)
-
+            '''
+            
             for j in range(num_samples):
                 # Show progress
-                print('player 2+3 progress: {}/{}'.format(
+                print('player {} progress: {}/{}'.format('+'.join([str(index) for index in player_index_data_dict.keys()]),
                     progress, len(sample_size_range) * num_samples))
                 
+
+                for (observed_datas, data_holder_names) in data_holders_list:
+                    for observed_data, data_holder_name in zip(observed_datas, data_holder_names):
+                        pm.set_data({data_holder_name: observed_data[i][j]})
+
+
                 # Assign the data
+                '''
                 pm.set_data({'pmData_x_2': data_x_2[i][j]})
 
 
                 pm.set_data({'pmData_x_3': data_x_3[i][j]})
                 pm.set_data({'pmData_y_3': data_y_3[i][j]})
-                
+                '''
+
+
                 # Sample from the posterior
                 pmTrace = pm.sample(draws=num_draws, 
                                     cores=pr.max_num_cores, 

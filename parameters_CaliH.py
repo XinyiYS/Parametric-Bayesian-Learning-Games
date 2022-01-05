@@ -21,8 +21,7 @@ tuning_step = 1000
 
 num_params = 6 # 
 true_param = [0.21031031,  0.04282435, -0.10801392,  0.09709814,  0.00516233, -0.01044389]
-# best_lambda = 2.47e-07
-
+best_lambda = 2.47e-07
 
 # The prior distribution
 prior_mean = np.zeros(num_params)
@@ -32,4 +31,4 @@ prior_cov = np.diag(np.repeat(1, num_params))
 base_sample_size = 20
 base_sample_increment = 10
 max_sample_increment = 60
-max_iteration = 10
+max_iteration = 50

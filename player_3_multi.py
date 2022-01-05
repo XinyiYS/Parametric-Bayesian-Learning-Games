@@ -93,8 +93,23 @@ logL = logL * term
 logL = T.log(logL)
 
 # The dlog likelihood function
-dlogL = theano.function([x, y, theta, noise_var_prior], T.grad(logL, theta))
+dlogL = theano.function([x, y, noise_var_prior, theta], T.grad(logL, theta))
 
+
+def estimate_FI(player_data, estimated_param, num_params):
+    # player 3
+    [data_x3, data_y3, player_3_noise_std_estimate] = player_data
+    player_3_noise_var_estimate = player_3_noise_std_estimate**2
+    emp_Fisher_3 = np.zeros((num_params, num_params))
+    for j in range(len(data_x3[0][0])):
+        sample_dlogL = dlogL(data_x3[0][0][j], data_y3[0][0][j], player_3_noise_var_estimate, estimated_param)
+        sample_dlogL.shape = (num_params, 1)
+        emp_Fisher_3 += np.matmul(sample_dlogL, np.transpose(sample_dlogL))
+    emp_Fisher_3 = emp_Fisher_3 / len(data_x3[0][0])
+    return emp_Fisher_3
+
+
+'''
 def estimate_fisher_information(sample_size):
     # Generate some samples
     sample_x, sample_y = generate(sample_size)
@@ -107,6 +122,7 @@ def estimate_fisher_information(sample_size):
         emp_Fisher += np.matmul(sample_dlogL, np.transpose(sample_dlogL))
     emp_Fisher = emp_Fisher / sample_size
     return emp_Fisher
+'''
 
 """Sample KL divergences from player 3"""
 # Function for computing the mean of output given an input and a parameter
@@ -136,7 +152,8 @@ def compute_mean(x, theta):
     return mu_y
 
 def sample_kl_divergences(sample_size_range, num_samples, num_draws,
-                          prior_mean, prior_cov, noise_std_estimate=noise_std_prior):  
+                          prior_mean, prior_cov, noise_std_estimate=noise_std_prior): 
+
     # Computed outputs
     estimated_kl_values = []
     
