@@ -9,7 +9,7 @@ import pandas as pd
 
 from sklearn.preprocessing import StandardScaler, MinMaxScaler, minmax_scale
 
-X = pd.read_csv('.data/Face_Age/face_age-CNN_features.csv').values
+X = pd.read_csv('.data/Face_Age/face_age-CNN_features.csv')
 y = pd.read_csv('.data/Face_Age/face_age-labels.csv').values
 X = X.drop(columns=['9']) # column 9 is all 0, so we drop it upon inspection
 
