@@ -1,7 +1,7 @@
 import numpy as np
 
 # Number of cores to be used
-max_num_cores = 4
+max_num_cores = 1
 
 # Sample size range & Number of samples to be generated
 sample_size_range = range(10, 25, 10)
