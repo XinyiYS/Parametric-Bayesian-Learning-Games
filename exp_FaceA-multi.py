@@ -8,10 +8,8 @@ import matplotlib.pyplot as plt
 import pandas as pd
 
 from sklearn.preprocessing import StandardScaler, MinMaxScaler, minmax_scale
-from sklearn.model_selection import train_test_split
 
-
-X = pd.read_csv('.data/Face_Age/face_age-CNN_features.csv')
+X = pd.read_csv('.data/Face_Age/face_age-CNN_features.csv').values
 y = pd.read_csv('.data/Face_Age/face_age-labels.csv').values
 X = X.drop(columns=['9']) # column 9 is all 0, so we drop it upon inspection
 
@@ -90,7 +88,8 @@ P2_NAN_RATIO = 0.2 # 0.1, 0.2
 
 for P1_DATA_SIZE in [1000, 5000]:
     for P1_LOCAL_SAMPLE_SIZE in [100, 500]:
-        exp_dir = oj('multiplayer', 'CaliH', "P1-{}_{}".format(str(P1_DATA_SIZE), str(P1_LOCAL_SAMPLE_SIZE)) )
+        # for P1_LOCAL_SAMPLE in ['iid' ,'lvg_iid']:
+        exp_dir = oj('multiplayer', 'FaceA', "P1-{}_{}".format(str(P1_DATA_SIZE), str(P1_LOCAL_SAMPLE_SIZE)) )
 
         os.makedirs(exp_dir, exist_ok=True)
 
@@ -125,12 +124,23 @@ for P1_DATA_SIZE in [1000, 5000]:
             f.write("sample_size_range =  " + str(pr.sample_size_range)+ '\n')
             f.write("num_samples =  " + str(pr.num_samples)+ '\n')
 
+        posterior_sample_size = pr.posterior_sample_size
+        prior_mean = pr.prior_mean
+        prior_cov = pr.prior_cov
+        num_params = pr.num_params
 
+        base_sample_size = pr.base_sample_size
+        base_sample_increment = pr.base_sample_increment
+        max_sample_increment = pr.max_sample_increment
+        max_iteration = pr.max_iteration
+
+ 
         indices_1 = np.random.choice(list(range(len(X))), P1_DATA_SIZE)
         X_1, y_1 = X[indices_1], y[indices_1]
 
         indices_3 = np.random.choice(list(range(len(X))), P1_DATA_SIZE)
         X_3, y_3 = X[indices_3], y[indices_3]
+
 
         # set player 2's data to be part of the full data with missing data
         indices_2 = np.random.choice(list(range(len(X))), int(P2_DATA_RATIO * len(X)))
@@ -171,18 +181,21 @@ for P1_DATA_SIZE in [1000, 5000]:
                 x, y = X_1[indices], y_1[indices]
 
                 theta_hat = np.linalg.inv(x.T @ x + reg_lambda * np.identity(x.shape[1])) @ x.T @ y  
-                sample_theta[i] = theta_hat
+                sample_theta[i] = np.squeeze(theta_hat)
             return sample_theta
 
 
         print("Global True param:", pr.true_param)
         beta = 1
+        
+        player_2.data_cov = np.diag(np.full(num_params, 2.5))
+
         # Player 2 maintains a posterior of BLR trained on the data
-
-
         player_2.data_cov_inv = np.linalg.inv(player_2.data_cov) + beta * (X_2.T @ X_2)
         player_2.data_cov = np.linalg.inv(player_2.data_cov_inv)
         player_2.data_mean = np.linalg.inv(X_2.T @ X_2 + reg_lambda * np.identity(X_2.shape[1])) @ X_2.T @ y_2
+
+        player_2.data_mean = np.squeeze(player_2.data_mean)
 
         print("Player 2 maintained prior mean:", player_2.data_mean)
         print("Player 2 maintained prior cov:", player_2.data_cov)
@@ -202,14 +215,17 @@ for P1_DATA_SIZE in [1000, 5000]:
                 x, y = X_1[indices], y_1[indices]
 
                 theta_hat = np.linalg.inv(x.T @ x + reg_lambda * np.identity(x.shape[1])) @ x.T @ y  
-                sample_theta[i] = theta_hat
+                sample_theta[i] = theta_hat.squeeze()
             return sample_theta
 
-
-        # Player 2 maintains a posterior of BLR trained on the data
+        # Player 4 maintains a posterior of BLR trained on the data
+        player_4.data_cov = np.diag(np.full(num_params, 3.5))
+        
         player_4.data_cov_inv = np.linalg.inv(player_4.data_cov) + beta * (X_4.T @ X_4)
         player_4.data_cov = np.linalg.inv(player_4.data_cov_inv)
         player_4.data_mean = np.linalg.inv(X_4.T @ X_4 + reg_lambda * np.identity(X_4.shape[1])) @ X_4.T @ y_4
+
+        player_4.data_mean = np.squeeze(player_4.data_mean)
 
         print("Player 4 maintained prior mean:", player_4.data_mean)
         print("Player 4 maintained prior cov:", player_4.data_cov)
@@ -217,22 +233,11 @@ for P1_DATA_SIZE in [1000, 5000]:
         def p4_generate_fcn(sample_size):
             return np.random.multivariate_normal(mean=player_4.data_mean, cov=player_4.data_cov, size=sample_size)
 
-
-        posterior_sample_size = pr.posterior_sample_size
-        prior_mean = pr.prior_mean
-        prior_cov = pr.prior_cov
-        num_params = pr.num_params
-
-        base_sample_size = pr.base_sample_size
-        base_sample_increment = pr.base_sample_increment
-        max_sample_increment = pr.max_sample_increment
-        max_iteration = pr.max_iteration
-
-
         N = 4
         P_set = powerset(list(range(N)))
 
         players = [player_1, player_2, player_3, player_4] # create a list of the player py files for calling player-specific custom functions
+
 
         player_sample_sizes = [base_sample_size for _ in range(N)] # a list of N numbers
 
@@ -322,8 +327,9 @@ for P1_DATA_SIZE in [1000, 5000]:
                 player_shapley_list.append(sample_shapleys[player_index])
                          
 
+            
+            theano.config.compute_test_value = 'ignore'
 
-            theano.config.compute_test_value = 'ignore'                
             # Compute Fisher information matrix (determinants) 
             
             player_FI_dets = []
@@ -359,12 +365,13 @@ for P1_DATA_SIZE in [1000, 5000]:
 
                 player_sample_sizes[i] = int(player_sample_sizes[i])
 
+
         for player_index in range(N):
 
-            np.savetxt(oj(exp_dir, 'cumulative_{}.txt'.format(str(player_index+1))), player_sample_size_lists[player_index])
+            np.savetxt('cumulative_{}.txt'.format(str(player_index+1)), player_sample_size_lists[player_index])
             
-            np.savetxt(oj(exp_dir, 'shapley_fair_{}.txt'.format(str(player_index+1))), player_shapley_lists[player_index])
+            np.savetxt('shapley_fair_{}.txt'.format(str(player_index+1)), player_shapley_lists[player_index])
             
-            np.savetxt(oj(exp_dir, 'FI_det_{}.txt'.format(str(player_index+1))), player_FI_lists[player_index])
+            np.savetxt('FI_det_{}.txt'.format(str(player_index+1)), player_FI_lists[player_index])
 
         log_file.close()
