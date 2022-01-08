@@ -17,6 +17,9 @@ import parameters_MNIST as pr
 num_params = pr.num_params
 true_param = pr.true_param
 
+num_classes = pr.num_classes
+latent_dim = pr.latent_dim
+
 '''
 # -- NEW -- # with estimated cov
 # Input variables
@@ -40,21 +43,62 @@ dlogL = theano.function([x, theta, cov_hat], T.grad(logL, theta))
 
 # compute dlogL for each class independently
 
-value = T.dmatrix('value') # observations:  n * d, d is the latent dimension
-mu_opt = T.dmatrix('mu_opt') # mu estimates: d
-tau_opt = T.dmatrix('tau_opt') # mu estimates: d * d
+# value = T.dmatrix('value') # observations:  n * d, d is the latent dimension
+# mu_opt = T.dmatrix('mu_opt') # mu estimates: d
+# tau_opt = T.dmatrix('tau_opt') # mu estimates: d * d
 
-k = tau_opt.shape[0]
+# k = tau_opt.shape[0]
 
-deltas, updates = theano.scan(lambda v: v - mu_opt, sequences = value)
+# deltas, updates = theano.scan(lambda v: v - mu_opt, sequences = value)
 
-logL = T.sum((-1 / 2.0) * (k * T.log(2 * np.pi)
-                     + T.log(1.0 / det(tau_opt))
-                     + (deltas.dot(tau_opt) * deltas).sum(axis=1)
-                    )
-            )
+# logL = T.sum((-1 / 2.0) * (k * T.log(2 * np.pi)
+#                      + T.log(1.0 / det(tau_opt))
+#                      + (deltas.dot(tau_opt) * deltas).sum(axis=1)
+#                     )
+#             )
 
-dlogL = theano.function([mu_opt, value, tau_opt], T.grad(logL, mu_opt))
+# dlogL = theano.function([mu_opt, value, tau_opt], T.grad(logL, mu_opt))
+
+
+def get_dLogL():
+    value = T.dmatrix('value') # observations:  n * d, d is the latent dimension
+    mu_opt = T.dmatrix('mu_opt') # mu estimates: d
+    tau_opt = T.dmatrix('tau_opt') # mu estimates: d * d
+
+    k = tau_opt.shape[0]
+
+    deltas, updates = theano.scan(lambda v: v - mu_opt, sequences = value)
+
+    logL = T.sum((-1 / 2.0) * (k * T.log(2 * np.pi)
+                         + T.log(1.0 / det(tau_opt))
+                         + (deltas.dot(tau_opt) * deltas).sum(axis=1)
+                        )
+                )
+
+    dlogL = theano.function([mu_opt, value, tau_opt], T.grad(logL, mu_opt))
+    return dlogL
+
+def estimate_FI(player_data, estimated_param):
+
+    [estimated_means, estimated_covs] = estimated_param
+    [sampled_vae_mus, sampled_vae_logvars] = player_data
+
+    emp_Fishers = [np.zeros((latent_dim, latent_dim))  for c in range(num_classes)]
+
+    dlogL = get_dLogL()
+
+    for c in range(num_classes):    
+        if len(sampled_vae_mus[0][0][c]) == 0: continue
+
+        sample_dlogL = dlogL(estimated_means[c].reshape(1, latent_dim), sampled_vae_mus[0][0][c], estimated_covs[c])
+
+        sample_dlogL.shape = (latent_dim, 1)
+        
+        emp_Fishers[c] += np.matmul(sample_dlogL, np.transpose(sample_dlogL))
+
+        emp_Fishers[c] = emp_Fishers[c] / len(sampled_vae_logvars[0][0][c])
+
+    return emp_Fishers
 
 '''
 from pymc3.math import logsumexp

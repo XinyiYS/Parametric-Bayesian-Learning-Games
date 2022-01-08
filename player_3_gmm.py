@@ -17,8 +17,6 @@ import parameters_MNIST as pr
 num_params = pr.num_params
 true_param = pr.true_param
 
-# compute dlogL for each class independently
-
 num_classes = pr.num_classes
 latent_dim = pr.latent_dim
 
@@ -63,10 +61,13 @@ def estimate_FI(player_data, estimated_param):
     return emp_Fishers
 
 
-"""Sample KL divergences from player 1"""
+
+
+"""Sample KL divergences from player 3"""
 # Function for computing the mean of output given an input and a parameter
 # The same for all players
 from theano.tensor.nlinalg import matrix_inverse
+
 testvals = [[-2,-2],[0,0],[2,2], [1,1] , [-1,2] , [-2,-2],[0,0],[2,2], [1,1], [-1,2]]
 
 def sample_kl_divergences(sample_size_range, num_samples, num_draws,
@@ -110,48 +111,33 @@ def sample_kl_divergences(sample_size_range, num_samples, num_draws,
                              testval=pm.floatX(testvals[c]))
                  for c in range(num_classes)]
             
-            # packed_L = [pm.LKJCholeskyCov('packed_L_%d' % c, n=latent_dim, eta=2., 
-                                          # sd_dist=pm.HalfCauchy.dist(1))
-                        # for c in range(num_classes)]
-            
-            # L = [pm.expand_packed_triangular(latent_dim, packed_L[c])
-                 # for c in range(num_classes)]
-            
-            # sigma = [pm.Deterministic('sigma_%d' % c ,L[c].dot(L[c].T))
-                     # for c in range(num_classes)]
-            # tau = [pm.Deterministic('tau_%d' % c,matrix_inverse(sigma[c]))
-                   # for c in range(num_classes)]
-
-            # mvnl = [pm.MvNormal.dist(mu=mus[c],chol=L[c]) for c in range(num_classes)]
-
 
             mvnl = [pm.MvNormal.dist(mu=mus[c],cov = np.eye(latent_dim)) for c in range(num_classes)]
 
             
             p = pm.Dirichlet('p', a=np.array([1.]*num_classes))
             
-
             gmm_data = pm.Data('gmm_data', np.concatenate(sampled_vae_mus))
 
             gmm = pm.Mixture('GMM', w=p, comp_dists=mvnl, observed=gmm_data)
 
+
             
             for j in range(num_samples):
                 # Show progress
-                print('player 2 progress: {}/{}'.format(progress, len(sample_size_range) * num_samples))
+                print('player 3 progress: {}/{}'.format(progress, len(sample_size_range) * num_samples))
                 
                 # Generate the data
                 # sample_means, sample_logvars = generate_fcn(sample_size)
                 sampled_vae_mus, sampled_vae_logvars = generate_fcn(sample_size)
 
-                print("player 2 sampled counts per class: ", [len(sampled_vae_mus[c]) for c in range(num_classes) ]) 
-                print("player 2 sampled shape per class: ", [sampled_vae_mus[c].shape for c in range(num_classes) ]) 
+                print("player 3 sampled counts per class: ", [len(sampled_vae_mus[c]) for c in range(num_classes) ]) 
+                print("player 3 sampled shape per class: ", [sampled_vae_mus[c].shape for c in range(num_classes) ]) 
                 
                 # for c in range(num_classes):
                     # pm.set_data({'pmData_Mu_'+ str(c): sampled_vae_mus[c]})
                   
                 pm.set_data({'gmm_data': np.concatenate(sampled_vae_mus)})
-
 
                 # Store the data
 
@@ -170,8 +156,8 @@ def sample_kl_divergences(sample_size_range, num_samples, num_draws,
 
                 post_mean = np.array(summary.loc[:, 'mean'])
                 post_cov = pm.trace_cov(pmTrace)
-                
-                print('Player 2\'s prior and posterior shapes:', prior_mean.shape, prior_cov.shape, post_mean.shape, post_cov.shape)
+
+                print('Player 3\'s prior and posterior shapes:', prior_mean.shape, prior_cov.shape, post_mean.shape, post_cov.shape)
 
                 post_means = post_mean[:num_classes*latent_dim].reshape(num_classes, latent_dim)
 

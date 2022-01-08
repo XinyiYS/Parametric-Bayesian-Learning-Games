@@ -11,6 +11,7 @@ import fourier as fr
 import parameters_MNIST as pr
 num_params = pr.num_params
 true_param = pr.true_param
+latent_dim = pr.latent_dim
 
 def estimate_fisher_information(sample_size, p1_generate_fcn=None, p2_generate_fcn=None):
 
