@@ -82,7 +82,7 @@ def impute_with_mean(X):
 # P1_LOCAL_SAMPLE_SIZE =  100 # 10, 100, 500
 # P1_LOCAL_SAMPLE = 'iid' # iid, lvg_iid
 
-P2_DATA_RATIO = 0.1  # 0.01,  0.1, 0.5
+P2_DATA_RATIO = 0.1  # 0.01, 0.1, 0.5
 P2_NAN_RATIO = 0.1 # 0.1, 0.2
 
 for P1_DATA_SIZE in [1000, 5000]:
