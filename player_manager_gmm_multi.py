@@ -211,14 +211,14 @@ def sample_kl_divergences(sample_size_range, num_samples, num_draws,
                 post_means = post_mean[:num_classes*latent_dim].reshape(num_classes, latent_dim)
 
                 M = latent_dim
-                post_covs  = [ post_cov[k * M:(k+1  )*M, k * M: ( k + 1) * M] for k in range(num_classes)   ]
+                post_covs  = [ post_cov[k * M:(k+1) * M, k * M: ( k + 1) * M] for k in range(num_classes)   ]
  
 
                 # Assuming Normal distribution for the posterior,
                 # estimate the KL divergence
                 # estimated_kl.append(div.compute_KL(post_mean, post_cov, # prior_mean, prior_cov))
 
-                kl = sum([div.compute_KL(post_mean, post_cov, prior_mean, prior_cov) for post_mean, post_cov in zip(post_means, post_covs)  ])
+                kl = sum([div.compute_KL(post_mean, post_cov, prior_mean, prior_cov) for post_mean, post_cov in zip(post_means, post_covs)])
                 estimated_kl.append(kl)
                 
                 # Update progress

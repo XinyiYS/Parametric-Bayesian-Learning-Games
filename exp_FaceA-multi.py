@@ -83,21 +83,21 @@ def impute_with_mean(X):
 # P1_LOCAL_SAMPLE_SIZE =  100 # 10, 100, 500
 # P1_LOCAL_SAMPLE = 'iid' # iid, lvg_iid
 
-P2_DATA_RATIO = 0.05  # 0.01, 0.1, 0.5
-P2_NAN_RATIO = 0.3 # 0.1, 0.2
+P2_DATA_RATIO = 0.1  # 0.01, 0.1, 0.5
+P2_NAN_RATIO = 0.2 # 0.1, 0.2
 
-P1_DATA_SIZE = 1000 # 100, 500, 2000
-P1_LOCAL_SAMPLE_SIZE =  100 # 10, 100, 500
+# P1_DATA_SIZE = 1000 # 100, 500, 2000
+# P1_LOCAL_SAMPLE_SIZE =  100 # 10, 100, 500
 # P1_LOCAL_SAMPLE = 'lvg_iid' # iid, lvg_iid
 
 # P2_DATA_RATIO = 0.1  # 0.01,  0.1, 0.5
 # P2_NAN_RATIO = 0.1 # 0.1, 0.2
 
-for P2_DATA_RATIO in [0.01, 0.05, ]:
-    for P2_NAN_RATIO in [ 0.1, 0.3, 0.4]:
+# for P2_DATA_RATIO in [0.01, 0.05, ]:
+    # for P2_NAN_RATIO in [ 0.1, 0.3, 0.4]:
 
-# for P1_DATA_SIZE in [1000, 5000]:
-    # for P1_LOCAL_SAMPLE_SIZE in [100, 500]:
+for P1_DATA_SIZE in [5000]:
+    for P1_LOCAL_SAMPLE_SIZE in [100, 500]:
         # for P1_LOCAL_SAMPLE in ['iid' ,'lvg_iid']:
         exp_dir = oj('multiplayer', 'FaceA', "P1-{}_{}-P2ratio-{}-{}".format(str(P1_DATA_SIZE), str(P1_LOCAL_SAMPLE_SIZE), str(P2_DATA_RATIO), str(P2_NAN_RATIO)) )
 

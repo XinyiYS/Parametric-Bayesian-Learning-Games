@@ -223,7 +223,7 @@ for P1_DATA_SIZE, P2_DATA_SIZE in [(1000, 1000), (1000, 5000), (5000, 5000)]:
             M = latent_dim
             estimated_covs  = [post_cov[k * M:(k+1  )*M, k * M: ( k + 1) * M] for k in range(num_classes)   ]
             
-            p12_estimated_covs.append(estimated_covs.flatten())
+            p12_estimated_covs.append(np.asarray(estimated_covs).flatten())
 
             # Estimate the Fisher informations at the estimated parameter
             # player 1
