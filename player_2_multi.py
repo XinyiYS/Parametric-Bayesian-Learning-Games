@@ -19,8 +19,8 @@ num_params = pr.num_params
 true_param = pr.true_param
 
 # Get a random covariance
-cov_prior = 2.5
-data_cov = np.diag(np.full(num_params, cov_prior))
+cov = 2.5
+data_cov = np.diag(np.full(num_params, cov))
 
 # Generate data from player 2
 def generate(sample_size):
