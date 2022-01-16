@@ -32,4 +32,4 @@ prior_cov = np.diag(np.repeat(1, num_params))
 base_sample_size = 20
 base_sample_increment = 10
 max_sample_increment = 60
-max_iteration = 10
+max_iteration = 50
