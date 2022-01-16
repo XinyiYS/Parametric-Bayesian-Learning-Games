@@ -86,8 +86,8 @@ P1_LOCAL_SAMPLE_SIZE =  500 # 10, 100, 500
 # P2_DATA_RATIO = 0.1  # 0.01, 0.1, 0.5
 # P2_NAN_RATIO = 0.2 # 0.1, 0.2
 
-for P2_DATA_RATIO in [0.01, 0.05, 0.1,]:
-    for P2_NAN_RATIO in [ 0.1, 0.2, 0.3, 0.4 ]:
+for P2_DATA_RATIO in [0.05, 0.1, 0.2]:
+    for P2_NAN_RATIO in [ 0.05, 0.1,]:
 # for P1_DATA_SIZE in [5000]:
     # for P1_LOCAL_SAMPLE_SIZE in [100, 500]:
         # for P1_LOCAL_SAMPLE in ['iid' ,'lvg_iid']:
