@@ -46,7 +46,7 @@ for P1_noise_std_dev in [1, 1.2, 1.4]:
     for P3_noise_std_dev in [1.1, 1.3, 1.5]:
         P2_cov = player_2.cov
 
-        result_dir = oj('multiplayer', 'synthec', "P1-{}_P2-{}_P3-{}".format(str(P1_noise_std_dev), str(P2_cov), str(P3_noise_std_dev)) )
+        result_dir = oj('multiplayer', 'synthetic', "P1-{}_P2-{}_P3-{}".format(str(P1_noise_std_dev), str(P2_cov), str(P3_noise_std_dev)) )
 
         player_1.noise_std_dev = P1_noise_std_dev
         player_3.noise_std_dev = P3_noise_std_dev
