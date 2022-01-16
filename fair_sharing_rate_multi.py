@@ -20,11 +20,27 @@ from player_manager import sample_kl_divergences
 import os
 from os.path import join as oj
 
+
+from contextlib import contextmanager
+
+@contextmanager
+def cwd(path):
+    oldpwd=os.getcwd()
+    os.chdir(path)
+    try:
+        yield
+    finally:
+        os.chdir(oldpwd)
+
+
 import time
 import datetime
 
 ts = time.time()
 st = datetime.datetime.fromtimestamp(ts).strftime('%Y-%m-%d-%H:%M')
+
+
+
 
 for P1_noise_std_dev in [1, 1.2, 1.4]:
     for P3_noise_std_dev in [1.1, 1.3, 1.5]:
@@ -37,205 +53,207 @@ for P1_noise_std_dev in [1, 1.2, 1.4]:
 
         os.makedirs(result_dir, exist_ok=True)
 
-        os.chdir(result_dir)
-
-        with open(oj('settings.txt'), 'w') as f:
-
-            f.write("Experiment Parameters: \n")
-
-            f.write("P1_known_noise_std =  " + str(player_1.noise_std_dev) + '\n')
-            f.write("P2_known_noise =  " + str(P2_cov)+ '\n')
-            f.write("P2_known_noise_cov =  " + str(player_2.data_cov)+ '\n')
-
-            f.write("P3_unknown_noise_std =  " + str(player_3.noise_std_dev)+ '\n')
-            f.write("P3_noise_std_prior =  " + str(player_3.noise_std_prior)+ '\n')
-
-            f.write("\n")
-
-            f.write("Algorithm Parameters: \n")
-
-            f.write("fisher_sample_size =  " + str(pr.fisher_sample_size)+ '\n')
-            f.write("posterior_sample_size =  " + str(pr.posterior_sample_size)+ '\n')
-            f.write("tuning_step =  " + str(pr.tuning_step)+ '\n')
-            f.write("num_params =  " + str(pr.num_params)+ '\n')
-            f.write("true_param =  " + str(pr.true_param)+ '\n')
-            # f.write("best_lambda =  " + str(pr.best_lambda)+ '\n')
-
-            f.write("base_sample_size =  " + str(pr.base_sample_size)+ '\n')
-            f.write("base_sample_increment =  " + str(pr.base_sample_increment)+ '\n')
-            f.write("max_sample_increment =  " + str(pr.max_sample_increment)+ '\n')
-            f.write("max_iteration =  " + str(pr.max_iteration)+ '\n')
-            
-            f.write("sample_size_range =  " + str(pr.sample_size_range)+ '\n')
-            f.write("num_samples =  " + str(pr.num_samples)+ '\n')
+        # os.chdir(result_dir)
 
 
-        posterior_sample_size = pr.posterior_sample_size
-        prior_mean = pr.prior_mean
-        prior_cov = pr.prior_cov
-        num_params = pr.num_params
-
-        base_sample_size = pr.base_sample_size
-        base_sample_increment = pr.base_sample_increment
-        max_sample_increment = pr.max_sample_increment
-        max_iteration = pr.max_iteration
+        with cwd(result_dir):
 
 
-        p1_sample_size_list = []
-        p2_sample_size_list = []
-        p3_sample_size_list = []
+            with open(oj('settings.txt'), 'w') as f:
 
-        p1_FI_list = []
-        p2_FI_list = []
-        p3_FI_list = []
+                f.write("Experiment Parameters: \n")
 
-        p1_shapley_list = []
-        p2_shapley_list = []
-        p3_shapley_list = []
+                f.write("P1_known_noise_std =  " + str(player_1.noise_std_dev) + '\n')
+                f.write("P2_known_noise =  " + str(P2_cov)+ '\n')
+                f.write("P2_known_noise_cov =  " + str(player_2.data_cov)+ '\n')
 
-        p1_FI_det_list = []
-        p2_FI_det_list = []
-        p3_FI_det_list = []
+                f.write("P3_unknown_noise_std =  " + str(player_3.noise_std_dev)+ '\n')
+                f.write("P3_noise_std_prior =  " + str(player_3.noise_std_prior)+ '\n')
 
-        N = 3
-        P_set = powerset(list(range(N)))
+                f.write("\n")
 
-        players = [player_1, player_2, player_3] # create a list of the player py files for calling player-specific custom functions
+                f.write("Algorithm Parameters: \n")
 
-        player_sample_sizes = [base_sample_size for _ in range(N)] # a list of N numbers
+                f.write("fisher_sample_size =  " + str(pr.fisher_sample_size)+ '\n')
+                f.write("posterior_sample_size =  " + str(pr.posterior_sample_size)+ '\n')
+                f.write("tuning_step =  " + str(pr.tuning_step)+ '\n')
+                f.write("num_params =  " + str(pr.num_params)+ '\n')
+                f.write("true_param =  " + str(pr.true_param)+ '\n')
+                # f.write("best_lambda =  " + str(pr.best_lambda)+ '\n')
 
-        player_sample_size_lists = [[] for _ in range(N)] # a list of N lists, each of length=max_iterations 
-
-        player_FI_lists = [[] for _ in range(N)] # a list of N lists, each of length=max_iterations 
-
-        player_shapley_lists = [[] for _ in range(N)] # a list of N lists, each of length=max_iterations 
-
-
-        # prior for unknown noises
-        player_3_noise_std_estimate = player_3.noise_std_prior
-
-        print("Testing multiplayer scenario for {} players with {} iterations.".format(N, max_iteration))
-
-        for i in range(max_iteration):
-            # Progress
-            print("Iteration: {}/{} ".format(i + 1, max_iteration))
-            print("Sample size: {}".format(player_sample_sizes))
-
-            # Record current sample sizes
-            for player_sample_size_list, player_sample_size in zip(player_sample_size_lists, player_sample_sizes):
-                player_sample_size_list.append(player_sample_size)
-            
-
-            # Generate the sample kl divergences
-
-            sample_kl_1, data_x1, data_y1 = player_1.sample_kl_divergences(
-                [player_sample_sizes[0]], 1, posterior_sample_size, prior_mean, prior_cov)
-            
-            sample_kl_2, data_x2 = player_2.sample_kl_divergences(
-                [player_sample_sizes[1]], 1, posterior_sample_size, prior_mean, prior_cov)
-            
-            sample_kl_3, data_x3, data_y3 = player_3.sample_kl_divergences(
-                [player_sample_sizes[2]], 1, posterior_sample_size, prior_mean, prior_cov, noise_std_estimate=player_3_noise_std_estimate)
-            
-            player_3_noise_std_estimate = np.sqrt(tvar(data_y3[0][0]))
-            
-            
-            player_sample_kl_list = [sample_kl_1, sample_kl_2, sample_kl_3] # a list of N numbers for each iteration
-            
-            
-            player_index_data_dict = {0:[data_x1, data_y1], 1:[data_x2],\
-                2:[data_x3, data_y3, player_3_noise_std_estimate]}
-            
-            sample_kls = defaultdict(float) # a dict for later calculation of SV
-            
-            # update the dict for individual player sample_kl
-            for player_index, player_sample_kl in enumerate(player_sample_kl_list):
-                 sample_kls[tuple([player_index])] = np.squeeze(np.asarray(player_sample_kl)) 
-            
-            for subset in P_set:
-                print(subset)
-                if len(subset) <= 1:continue
+                f.write("base_sample_size =  " + str(pr.base_sample_size)+ '\n')
+                f.write("base_sample_increment =  " + str(pr.base_sample_increment)+ '\n')
+                f.write("max_sample_increment =  " + str(pr.max_sample_increment)+ '\n')
+                f.write("max_iteration =  " + str(pr.max_iteration)+ '\n')
                 
-                else:
-                    print("Executing the sample kl divergences for :", subset)
-                    estimated_kl_values, post_mean = sample_kl_divergences(
-                        [sum(player_sample_sizes[index] for index in subset)] , 1, 
-                        posterior_sample_size, prior_mean, prior_cov,             
-                        {index: player_index_data_dict[index] for index in subset}
-                        )
-                    print("Estimated kl values are: ", estimated_kl_values)
-                    sample_kls[tuple(subset)] = np.squeeze(np.asarray(estimated_kl_values))
-                    if len(subset) == N:
-                        # Get the current parameter estimate from all the players, used later for calculating FI
-                        estimated_param = post_mean
+                f.write("sample_size_range =  " + str(pr.sample_size_range)+ '\n')
+                f.write("num_samples =  " + str(pr.num_samples)+ '\n')
 
-            # Compute Shapley values
-            sample_shapleys = [0 for _ in range(N)]
 
-            for index in range(N):
-                sample_shapleys[index] = 0
+            posterior_sample_size = pr.posterior_sample_size
+            prior_mean = pr.prior_mean
+            prior_cov = pr.prior_cov
+            num_params = pr.num_params
+
+            base_sample_size = pr.base_sample_size
+            base_sample_increment = pr.base_sample_increment
+            max_sample_increment = pr.max_sample_increment
+            max_iteration = pr.max_iteration
+
+
+            p1_sample_size_list = []
+            p2_sample_size_list = []
+            p3_sample_size_list = []
+
+            p1_FI_list = []
+            p2_FI_list = []
+            p3_FI_list = []
+
+            p1_shapley_list = []
+            p2_shapley_list = []
+            p3_shapley_list = []
+
+            p1_FI_det_list = []
+            p2_FI_det_list = []
+            p3_FI_det_list = []
+
+            N = 3
+            P_set = powerset(list(range(N)))
+
+            players = [player_1, player_2, player_3] # create a list of the player py files for calling player-specific custom functions
+
+            player_sample_sizes = [base_sample_size for _ in range(N)] # a list of N numbers
+
+            player_sample_size_lists = [[] for _ in range(N)] # a list of N lists, each of length=max_iterations 
+
+            player_FI_lists = [[] for _ in range(N)] # a list of N lists, each of length=max_iterations 
+
+            player_shapley_lists = [[] for _ in range(N)] # a list of N lists, each of length=max_iterations 
+
+
+            # prior for unknown noises
+            player_3_noise_std_estimate = player_3.noise_std_prior
+
+            print("Testing multiplayer scenario for {} players with {} iterations.".format(N, max_iteration))
+
+            for i in range(max_iteration):
+                # Progress
+                print("Iteration: {}/{} ".format(i + 1, max_iteration))
+                print("Sample size: {}".format(player_sample_sizes))
+
+                # Record current sample sizes
+                for player_sample_size_list, player_sample_size in zip(player_sample_size_lists, player_sample_sizes):
+                    player_sample_size_list.append(player_sample_size)
+                
+
+                # Generate the sample kl divergences
+
+                sample_kl_1, data_x1, data_y1 = player_1.sample_kl_divergences(
+                    [player_sample_sizes[0]], 1, posterior_sample_size, prior_mean, prior_cov)
+                
+                sample_kl_2, data_x2 = player_2.sample_kl_divergences(
+                    [player_sample_sizes[1]], 1, posterior_sample_size, prior_mean, prior_cov)
+                
+                sample_kl_3, data_x3, data_y3 = player_3.sample_kl_divergences(
+                    [player_sample_sizes[2]], 1, posterior_sample_size, prior_mean, prior_cov, noise_std_estimate=player_3_noise_std_estimate)
+                
+                player_3_noise_std_estimate = np.sqrt(tvar(data_y3[0][0]))
+                
+                
+                player_sample_kl_list = [sample_kl_1, sample_kl_2, sample_kl_3] # a list of N numbers for each iteration
+                
+                
+                player_index_data_dict = {0:[data_x1, data_y1], 1:[data_x2],\
+                    2:[data_x3, data_y3, player_3_noise_std_estimate]}
+                
+                sample_kls = defaultdict(float) # a dict for later calculation of SV
+                
+                # update the dict for individual player sample_kl
+                for player_index, player_sample_kl in enumerate(player_sample_kl_list):
+                     sample_kls[tuple([player_index])] = np.squeeze(np.asarray(player_sample_kl)) 
+                
                 for subset in P_set:
+                    print(subset)
+                    if len(subset) <= 1:continue
+                    
+                    else:
+                        print("Executing the sample kl divergences for :", subset)
+                        estimated_kl_values, post_mean = sample_kl_divergences(
+                            [sum(player_sample_sizes[index] for index in subset)] , 1, 
+                            posterior_sample_size, prior_mean, prior_cov,             
+                            {index: player_index_data_dict[index] for index in subset}
+                            )
+                        print("Estimated kl values are: ", estimated_kl_values)
+                        sample_kls[tuple(subset)] = np.squeeze(np.asarray(estimated_kl_values))
+                        if len(subset) == N:
+                            # Get the current parameter estimate from all the players, used later for calculating FI
+                            estimated_param = post_mean
 
-                    if index not in subset:
-                        subset_included = tuple(sorted(subset + [index]))
+                # Compute Shapley values
+                sample_shapleys = [0 for _ in range(N)]
 
-                        C = len(subset) 
-                        if C == 0:
-                            sample_shapleys[index] +=  (fac(C) * fac(N-C-1) / fac(N)) * \
-                            sample_kls[subset_included]
-                        else:                    
-                            sample_shapleys[index] +=  (fac(C) * fac(N-C-1) / fac(N)) * \
-                            (sample_kls[subset_included] - sample_kls[tuple(subset)])
+                for index in range(N):
+                    sample_shapleys[index] = 0
+                    for subset in P_set:
 
-            for player_index, player_shapley_list in enumerate(player_shapley_lists):
-                player_shapley_list.append(sample_shapleys[player_index])
-                            
+                        if index not in subset:
+                            subset_included = tuple(sorted(subset + [index]))
 
-            # Compute Fisher information matrix (determinants) 
-            
-            player_FI_dets = []
-            
-            for player_index, player in enumerate(players):
+                            C = len(subset) 
+                            if C == 0:
+                                sample_shapleys[index] +=  (fac(C) * fac(N-C-1) / fac(N)) * \
+                                sample_kls[subset_included]
+                            else:                    
+                                sample_shapleys[index] +=  (fac(C) * fac(N-C-1) / fac(N)) * \
+                                (sample_kls[subset_included] - sample_kls[tuple(subset)])
+
+                for player_index, player_shapley_list in enumerate(player_shapley_lists):
+                    player_shapley_list.append(sample_shapleys[player_index])
+                                
+
+                # Compute Fisher information matrix (determinants) 
                 
-                player_data = player_index_data_dict[player_index]
+                player_FI_dets = []
                 
-                # calling the custom estimate_FI for each player
-                emp_Fisher = player.estimate_FI(player_data, estimated_param, num_params)
+                for player_index, player in enumerate(players):
+                    
+                    player_data = player_index_data_dict[player_index]
+                    
+                    # calling the custom estimate_FI for each player
+                    emp_Fisher = player.estimate_FI(player_data, estimated_param, num_params)
+                    
+                    player_FI_det = np.linalg.det(emp_Fisher)
+                    player_FI_dets.append(player_FI_det) # for comparison among players in this iteration
+                    
+                    player_FI_lists[player_index].append(player_FI_det) # for record keeping over iterations
                 
-                player_FI_det = np.linalg.det(emp_Fisher)
-                player_FI_dets.append(player_FI_det) # for comparison among players in this iteration
+                # Compute fair sharing rates
+
+                max_FI = max(player_FI_dets)
+                max_FI_sample_count = player_sample_sizes[player_FI_dets.index(max_FI)]
+                for i, (FI, sample_size) in enumerate(zip(player_FI_dets, player_sample_sizes)):
+                    
+                    if FI == max_FI:
+                        player_sample_sizes[i] += base_sample_increment
+
+                    else:
+                        rate = np.power(max_FI / FI, 1.0 / num_params)
+                        target = round(max_FI_sample_count * rate)
+                        if sample_size < target:
+                            sample_size += min(target - sample_size, max_sample_increment)
+
+                        player_sample_sizes[i] = int(sample_size)
+
+                    player_sample_sizes[i] = int(player_sample_sizes[i])
+
+
+            for player_index in range(N):
+
+                np.savetxt('cumulative_{}.txt'.format(str(player_index+1)), player_sample_size_lists[player_index])
                 
-                player_FI_lists[player_index].append(player_FI_det) # for record keeping over iterations
-            
-            # Compute fair sharing rates
-
-            max_FI = max(player_FI_dets)
-            max_FI_sample_count = player_sample_sizes[player_FI_dets.index(max_FI)]
-            for i, (FI, sample_size) in enumerate(zip(player_FI_dets, player_sample_sizes)):
+                np.savetxt('shapley_fair_{}.txt'.format(str(player_index+1)), player_shapley_lists[player_index])
                 
-                if FI == max_FI:
-                    player_sample_sizes[i] += base_sample_increment
-
-                else:
-                    rate = np.power(max_FI / FI, 1.0 / num_params)
-                    target = round(max_FI_sample_count * rate)
-                    if sample_size < target:
-                        sample_size += min(target - sample_size, max_sample_increment)
-
-                    player_sample_sizes[i] = int(sample_size)
-
-                player_sample_sizes[i] = int(player_sample_sizes[i])
-
-
-
-
-        for player_index in range(N):
-
-            np.savetxt('cumulative_{}.txt'.format(str(player_index+1)), player_sample_size_lists[player_index])
-            
-            np.savetxt('shapley_fair_{}.txt'.format(str(player_index+1)), player_shapley_lists[player_index])
-            
-            np.savetxt('FI_det_{}.txt'.format(str(player_index+1)), player_FI_lists[player_index])
+                np.savetxt('FI_det_{}.txt'.format(str(player_index+1)), player_FI_lists[player_index])
 
 
 
