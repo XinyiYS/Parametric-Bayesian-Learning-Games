@@ -46,79 +46,175 @@ def cwd(path):
     finally:
         os.chdir(oldpwd)
 
-exp_dir =  oj('multiplayer', 'xgpe9', 'multiplayer', 'MNIST_VAE')
-# exp_dir = oj('multiplayer' , 'KingH')
 
-# result_dir = oj('multiplayer', 'xgpe9', 'multiplayer', 'MNIST_VAE', 'P1-size-5000_P2-size-5000_P1-ratio-0.6')
-os.chdir(exp_dir)
-for result_dir in os.listdir():
+
+def plot_SV(exp_dir):
+
+    # result_dir = oj('multiplayer', 'xgpe9', 'multiplayer', 'MNIST_VAE', 'P1-size-5000_P2-size-5000_P1-ratio-0.6')
+    for result_dir in os.listdir():
+        try:
+            with cwd(result_dir):
+
+                N = 3 if 'synthetic' in exp_dir else 4
+
+                player_sample_size_lists = [np.loadtxt('cumulative_{}.txt'.format(i)) for i in range(1 , 1+N) ]
+                player_shapley_lists = [np.loadtxt('shapley_fair_{}.txt'.format(i)) for i in range(1 , 1+N) ]
+                player_FI_lists = [np.loadtxt('FI_det_{}.txt'.format(i)) for i in range(1 , 1+N) ]
+
+                plt.figure(figsize=(6, 4))
+
+                # Plot sample sizes
+
+                for player_index in range(N):
+                    plt.plot(player_sample_size_lists[player_index], label='P'+str(player_index+1), linestyle=linestyles[player_index])
+                    
+                plt.ylabel('Cumulative count')
+                plt.xlabel('Iterations')
+                plt.legend()
+                plt.tight_layout()
+                plt.savefig('output_sharing_rate.png',  bbox_inches='tight')
+                # plt.show()
+                plt.clf()    
+                plt.close()
+
+                plt.figure(figsize=(6, 4))
+
+                # Plot the shapley value
+                for player_index in range(N):
+
+                    if 'synthetic' in exp_dir and len(player_shapley_lists[0].shape) > 1:
+                        player_shapley_lists = [player_shapley_list[:,0] for player_shapley_list in player_shapley_lists]
+
+
+                    plt.plot(player_shapley_lists[player_index], label='P'+str(player_index+1), linestyle=linestyles[player_index])
+                    # else:
+                        # plt.plot(player_shapley_lists[player_index], label='P'+str(player_index+1), linestyle=linestyles[player_index])
+
+                plt.ylabel('Shapley value')
+                plt.xlabel('Iterations')
+
+                if 'MNIST_VAE' in exp_dir:
+                    bottom, top = plt.ylim() 
+                    plt.ylim(top=max(top, 12))
+
+                plt.legend()
+                plt.tight_layout()
+                plt.savefig('SV.png',  bbox_inches='tight')
+                # plt.show()
+                plt.clf()    
+                plt.close()
+
+
+                plt.figure(figsize=(6, 4))
+
+                # Plot the FI dets
+
+                for player_index in range(N):
+                    plt.plot(player_FI_lists[player_index], label='P'+str(player_index+1), linestyle=linestyles[player_index])
+
+                plt.ylabel('FI Determinant')
+                plt.xlabel('Iterations')
+                plt.legend()
+                plt.tight_layout()
+                plt.savefig('fi_determinant.png',  bbox_inches='tight')
+                # plt.show()
+                plt.clf()    
+                plt.close()
+
+        except Exception as e:
+            print(result_dir)
+            print(e)
+
+
+def plot_BV(exp_dir):
+    # result_dir = oj('multiplayer', 'xgpe9', 'multiplayer', 'MNIST_VAE', 'P1-size-5000_P2-size-5000_P1-ratio-0.6')
+    for result_dir in os.listdir():
+        
+        try:
+            with cwd(result_dir):
+
+                N = 3 if 'synthetic' in exp_dir else 4
+
+
+                player_sample_size_lists = [np.loadtxt('cumulative_{}.txt'.format(i)) for i in range(1 , 1+N) ]
+                player_banzhaff_lists = [np.loadtxt('banzhaff_fair_{}.txt'.format(i)) for i in range(1 , 1+N) ]
+                player_FI_lists = [np.loadtxt('FI_det_{}.txt'.format(i)) for i in range(1 , 1+N) ]
+
+                plt.figure(figsize=(6, 4))
+
+                # Plot sample sizes
+
+                for player_index in range(N):
+                    plt.plot(player_sample_size_lists[player_index], label='P'+str(player_index+1), linestyle=linestyles[player_index])
+                    
+                plt.ylabel('Cumulative count')
+                plt.xlabel('Iterations')
+                plt.legend()
+                plt.tight_layout()
+                plt.savefig('output_sharing_rate.png',  bbox_inches='tight')
+                # plt.show()
+                plt.clf()    
+                plt.close()
+
+                plt.figure(figsize=(6, 4))
+
+                # Plot the banzhaff value
+                for player_index in range(N):
+
+                    if 'synthetic' in exp_dir and len(player_banzhaff_lists[0].shape) > 1:
+                        player_banzhaff_lists = [player_banzhaff_list[:,0] for player_banzhaff_list in player_banzhaff_lists]
+
+
+                    plt.plot(player_banzhaff_lists[player_index], label='P'+str(player_index+1), linestyle=linestyles[player_index])
+                    # else:
+                        # plt.plot(player_banzhaff_lists[player_index], label='P'+str(player_index+1), linestyle=linestyles[player_index])
+
+                plt.ylabel('banzhaff value')
+                plt.xlabel('Iterations')
+
+                if 'MNIST_VAE' in exp_dir:
+                    bottom, top = plt.ylim() 
+                    plt.ylim(top=max(top, 12))
+
+                plt.legend()
+                plt.tight_layout()
+                plt.savefig('BV.png',  bbox_inches='tight')
+                # plt.show()
+                plt.clf()    
+                plt.close()
+
+
+                plt.figure(figsize=(6, 4))
+
+                # Plot the FI dets
+
+                for player_index in range(N):
+                    plt.plot(player_FI_lists[player_index], label='P'+str(player_index+1), linestyle=linestyles[player_index])
+
+                plt.ylabel('FI Determinant')
+                plt.xlabel('Iterations')
+                plt.legend()
+                plt.tight_layout()
+                plt.savefig('fi_determinant.png',  bbox_inches='tight')
+                # plt.show()
+                plt.clf()    
+                plt.close()
+
+        except Exception as e:
+            print(result_dir)
+            print(e)
+
+
+
+
+
+if __name__ == '__main__':
+    # exp_dir =  oj('multiplayer', 'xgpe9', 'multiplayer', 'MNIST_VAE')
+    exp_dir = oj('multiplayer-BV', 'CaliH')
+
     try:
-        with cwd(result_dir):
+        os.chdir(exp_dir)
+        plot_BV(exp_dir)
 
-            N = 3 if 'synthetic' in exp_dir else 4
-
-            player_sample_size_lists = [np.loadtxt('cumulative_{}.txt'.format(i)) for i in range(1 , 1+N) ]
-            player_shapley_lists = [np.loadtxt('shapley_fair_{}.txt'.format(i)) for i in range(1 , 1+N) ]
-            player_FI_lists = [np.loadtxt('FI_det_{}.txt'.format(i)) for i in range(1 , 1+N) ]
-
-            plt.figure(figsize=(6, 4))
-
-            # Plot sample sizes
-
-            for player_index in range(N):
-                plt.plot(player_sample_size_lists[player_index], label='P'+str(player_index+1), linestyle=linestyles[player_index])
-                
-            plt.ylabel('Cumulative count')
-            plt.xlabel('Iterations')
-            plt.legend()
-            plt.tight_layout()
-            plt.savefig('output_sharing_rate.png',  bbox_inches='tight')
-            # plt.show()
-            plt.clf()    
-            plt.close()
-
-            plt.figure(figsize=(6, 4))
-
-            # Plot the shapley value
-            for player_index in range(N):
-
-                if 'synthetic' in exp_dir:
-
-                    plt.plot(player_shapley_lists[player_index], label='P'+str(player_index+1), linestyle=linestyles[player_index])
-                else:
-                    plt.plot(player_shapley_lists[player_index], label='P'+str(player_index+1), linestyle=linestyles[player_index])
-
-            plt.ylabel('Shapley value')
-            plt.xlabel('Iterations')
-
-            if 'MNIST_VAE' in exp_dir:
-                bottom, top = plt.ylim() 
-                plt.ylim(top=max(top, 12))
-
-            plt.legend()
-            plt.tight_layout()
-            plt.savefig('SV.png',  bbox_inches='tight')
-            # plt.show()
-            plt.clf()    
-            plt.close()
-
-
-            plt.figure(figsize=(6, 4))
-
-            # Plot the FI dets
-
-            for player_index in range(N):
-                plt.plot(player_FI_lists[player_index], label='P'+str(player_index+1), linestyle=linestyles[player_index])
-
-            plt.ylabel('FI Determinant')
-            plt.xlabel('Iterations')
-            plt.legend()
-            plt.tight_layout()
-            plt.savefig('fi_determinant.png',  bbox_inches='tight')
-            # plt.show()
-            plt.clf()    
-            plt.close()
-
-    except Exception as e:
-        print(result_dir)
-        print(e)
+    except:
+        pass

@@ -14,12 +14,11 @@ print("Available colors:",  colors)
 
 
 linestyles = ['solid', 'dashed', 'dotted', 'dashdot',]
-markers = ['+','', '', '+', '', 'v', '','^', '<', '>' , 'x']
+markers = ['+','', '', '+', '', 'v', '', '^', '<', '>' , 'x']
 
 
-
-# name ='CaliH/'
-# exps = ['P2-01_04', 'P2-001_04']
+name ='CaliH/'
+exps = ['P2-01_04', 'P2-001_04']
 
 # name = 'KingH'
 # exps = ['P2-0.1_0.4', 'P2-0.01_0.4']
@@ -27,12 +26,19 @@ markers = ['+','', '', '+', '', 'v', '','^', '<', '>' , 'x']
 # name ='FaceA'
 # exps = ['P2-0.5_0.1','P2-0.1_0.1']
 
-name ='MNIST_VAE'
-exps = ['P1-size-1000_P2-size-1000_P1-ratio-0.1', 'P1-size-1000_P2-size-1000_P1-ratio-0.5']
+# name ='MNIST_VAE'
+# name ='MNIST_VAE-larger-sampling'
+
+# exp_header = 'P1-size-1000_P2-size-5000_P1-ratio-0.'
+# exps = [exp_header + str(i) for i in range(1, 10)]
+# exps = ['P1-size-5000_P2-size-5000_P1-ratio-0.1', 'P1-size-5000_P2-size-5000_P1-ratio-0.4']
 
 
-figures_dir = oj(name, 'figures')
+figures_dir = oj(name, 'figures', exp_header[:-3])
 os.makedirs(figures_dir, exist_ok=True)
+
+
+
 
 
 with open( oj(figures_dir, 'settings.txt'), 'w') as f:
@@ -40,8 +46,34 @@ with open( oj(figures_dir, 'settings.txt'), 'w') as f:
 	for exp in exps:
 		f.write( oj(name, exp) + '\n')
 
+for i, exp in enumerate(exps):
+	exp_dir = oj(name, exp)
 
-plt.figure(figsize=(12, 8))
+	p1_shapley_list = np.loadtxt(oj(exp_dir, "shapley_fair_1.txt"))
+	p2_shapley_list = np.loadtxt(oj(exp_dir, "shapley_fair_2.txt"))
+
+	label = exps[i].replace('-size', '')
+	sv_diffs = np.abs(p1_shapley_list - p2_shapley_list)
+
+	plt.plot(sv_diffs, label=label, linewidth = 4.5)
+	# plt.plot(sv_diffs, linestyle=linestyles[i], marker=markers[i], color=colors[i+2], label=label, linewidth = 4.5)
+
+	plt.ylim(-2, 10)
+
+	plt.xlabel('Iterations', fontsize=32)
+	plt.ylabel('Shapley value difference', fontsize=32)
+	plt.legend(fontsize=20, loc='upper right')
+
+	plt.xticks(fontsize=26)
+	plt.yticks(fontsize=26)
+	plt.title("SV Difference vs. Iterations", fontsize=32)
+	plt.tight_layout()
+	# plt.show()
+	plt.savefig(oj(figures_dir, 'SV-diff-0.{}.png'.format(str(i+1))))
+	plt.clf()
+	plt.close()
+
+
 
 for i, exp in enumerate(exps):
 	exp_dir = oj(name, exp)
