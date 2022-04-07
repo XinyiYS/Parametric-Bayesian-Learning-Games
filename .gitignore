@@ -152,11 +152,14 @@ KingH/P2*
 FaceA/P1*
 FaceA/P2*
 
+figures*
 
-MNIST_VAE/P1*
+MNIST_VAE/
 MNIST_VAE-larger-sampling/
 
 multiplayer/
+multiplayer-BV/
 */figures/*
 */table/*
 
+source code*
