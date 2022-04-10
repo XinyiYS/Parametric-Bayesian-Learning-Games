@@ -228,7 +228,7 @@ for P1_DATA_SIZE, P2_DATA_SIZE in [(1000, 5000), (5000, 5000)]:
 
         player_FI_lists = [[] for _ in range(N)] # a list of N lists, each of length=max_iterations 
 
-        player_shapley_lists = [[] for _ in range(N)] # a list of N lists, each of length=max_iterations 
+        player_banzhaff_lists = [[] for _ in range(N)] # a list of N lists, each of length=max_iterations 
 
 
         for i in range(max_iteration):
@@ -286,13 +286,13 @@ for P1_DATA_SIZE, P2_DATA_SIZE in [(1000, 5000), (5000, 5000)]:
                         # Get the current parameter estimate from all the players, used later for calculating FI
                         estimated_param = post_mean
            
-            # Compute Shapley values
-            sample_shapleys = [0 for _ in range(N)]
+            # Compute banzhaff values
+            sample_banzhaffs = [0 for _ in range(N)]
 
 
             BV_coalition_weight = 1./ 2**(N-1)
             for index in range(N):
-                sample_shapleys[index] = 0
+                sample_banzhaffs[index] = 0
                 for subset in P_set:
 
                     if index not in subset:
@@ -300,14 +300,14 @@ for P1_DATA_SIZE, P2_DATA_SIZE in [(1000, 5000), (5000, 5000)]:
 
                         C = len(subset) 
                         if C == 0:
-                            sample_shapleys[index] +=  BV_coalition_weight * \
+                            sample_banzhaffs[index] +=  BV_coalition_weight * \
                             sample_kls[subset_included]
                         else:                    
-                            sample_shapleys[index] +=  BV_coalition_weight * \
+                            sample_banzhaffs[index] +=  BV_coalition_weight * \
                             (sample_kls[subset_included] - sample_kls[tuple(subset)])
 
-            for player_index, player_shapley_list in enumerate(player_shapley_lists):
-                player_shapley_list.append(sample_shapleys[player_index])
+            for player_index, player_banzhaff_list in enumerate(player_banzhaff_lists):
+                player_banzhaff_list.append(sample_banzhaffs[player_index])
                          
             
             theano.config.compute_test_value = 'ignore'
@@ -367,7 +367,7 @@ for P1_DATA_SIZE, P2_DATA_SIZE in [(1000, 5000), (5000, 5000)]:
 
             np.savetxt(oj(exp_dir, 'cumulative_{}.txt'.format(str(player_index+1))), player_sample_size_lists[player_index])
             
-            np.savetxt(oj(exp_dir, 'shapley_fair_{}.txt'.format(str(player_index+1))), player_shapley_lists[player_index])
+            np.savetxt(oj(exp_dir, 'banzhaff_fair_{}.txt'.format(str(player_index+1))), player_banzhaff_lists[player_index])
             
             np.savetxt(oj(exp_dir, 'FI_det_{}.txt'.format(str(player_index+1))), player_FI_lists[player_index])
 

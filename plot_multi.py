@@ -169,7 +169,7 @@ def plot_BV(exp_dir):
                     # else:
                         # plt.plot(player_banzhaff_lists[player_index], label='P'+str(player_index+1), linestyle=linestyles[player_index])
 
-                plt.ylabel('banzhaff value')
+                plt.ylabel('Banzhaff value')
                 plt.xlabel('Iterations')
 
                 if 'MNIST_VAE' in exp_dir:
