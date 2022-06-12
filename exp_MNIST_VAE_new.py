@@ -27,9 +27,6 @@ np.random.seed(7913)
 
 def sample1(data_size):
 
-    # digit_counts = np.ceil(data_size * np.asarray(P1_PROBS)).astype(int)
-
-    # fix digit counts due to lack of PyMC3 support
     
     digit_counts = np.random.multinomial(data_size, P1_PROBS, size=1).squeeze()
 
@@ -39,13 +36,7 @@ def sample1(data_size):
     sampled_vae_logvars = [ logvars[digit_indices] for digit_indices in sampled_digit_indices]
 
 
-    '''
-    for c, count in enumerate(digit_counts):
-        if count == 0:
-            sampled_vae_mus[c] = np.zeros( (1, latent_dim) )
-            sampled_vae_logvars[c] = np.zeros( (1, latent_dim) ) 
 
-    '''
     return sampled_vae_mus, sampled_vae_logvars
 
 
@@ -63,14 +54,11 @@ def sample2(data_size):
     return sampled_vae_mus, sampled_vae_logvars
 
 
-import parameters_MNIST as pr
-import player_1_gmm as player_1
-import player_2_gmm as player_2
-import player_12_gmm as player_12
+from params import parameters_MNIST as pr
+from players import player_1_gmm as player_1, player_2_gmm as player_2, player_12_gmm as player_12
 
 import theano
 import theano.tensor as T
-
 
 
 P2_BALANCE = 0.1

@@ -20,32 +20,9 @@ X = StandardScaler().fit_transform(X=X)
 y = minmax_scale(y)
 
 
-'''
-curr_best = float('inf')
-best_w = None
-best_lambda = None
-for reg_lambda in np.logspace(-15, 0, num=1000):
-    w = np.linalg.inv(X.T @ X + reg_lambda * np.identity(X.shape[1])) @ X.T @ y
-    w = np.squeeze(w)
-    risk = np.linalg.norm(w @ X.T - y)
-    if risk < curr_best:
-        best_w = w
-        curr_best = risk
-        best_lambda = reg_lambda
-        print('updating at: ', reg_lambda, curr_best)
 
-print("Best lambda: {}, empirical risk:{} , w:{}.".format(best_lambda, curr_best, best_w))
-true_params = best_w
-best_lambda = best_lambda
-'''
-# true_params = [-0.00130591 -0.01399582 -0.00134454  0.02420948 -0.01538096  0.00052861 0.01242821 -0.01452801  0.02239355  0.02074722]
-# best_lambda = 1.0
-
-
-import parameters_KingH as pr
-import player_1 as player_1
-import player_2 as player_2
-import player_12 as player_12
+from params import parameters_KingH as pr
+from players import player_1, player_2, player_12
 
 import theano
 import theano.tensor as T

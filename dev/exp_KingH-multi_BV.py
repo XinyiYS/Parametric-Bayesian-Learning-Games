@@ -7,53 +7,21 @@ import matplotlib.pyplot as plt
 
 import pandas as pd
 
-from sklearn.datasets import fetch_california_housing
-data_fir = '.data/California_housing'
-X, y = fetch_california_housing(data_home=data_fir, download_if_missing=True, return_X_y=True, as_frame=False)
-bunch = fetch_california_housing(data_home=data_fir, download_if_missing=True, return_X_y=False, as_frame=True)
-df = bunch['frame']
+from sklearn.preprocessing import StandardScaler, MinMaxScaler, minmax_scale
 
-from sklearn.preprocessing import StandardScaler, minmax_scale
-from sklearn.model_selection import train_test_split
 
-# print(df.columns)
-df = df.drop(columns=['Latitude', 'Longitude'])
+X = pd.read_csv('.data/House_sales/KingH-NN_features.csv').values
+y = pd.read_csv('.data/House_sales/KingH-labels.csv').values
 
-# print(df.describe())
-# print(df.head())
-
-y = df['MedHouseVal'].values
-X = df.drop(columns=['MedHouseVal']).values
+# X = MinMaxScaler().fit_transform(X=X.values)
 
 X = StandardScaler().fit_transform(X=X)
 y = minmax_scale(y)
 
-'''
-curr_best = float('inf')
-best_w = None
-best_lambda = None
-for reg_lambda in np.logspace(-15, 0, num=1000):
-    w = np.linalg.inv(X.T @ X + reg_lambda * np.identity(X.shape[1])) @ X.T @ y
-    risk = np.linalg.norm(w @ X.T - y)
-    if risk < curr_best:
-        best_w = w
-        curr_best = risk
-        best_lambda = reg_lambda
-        print('updating at: ', reg_lambda, curr_best)
 
-print("Best lambda: {}, empirical risk:{} , w:{}.".format(best_lambda, curr_best, best_w))
-true_params = best_w
-best_lambda = best_lambda
-'''
-# true_params = [0.21031031,  0.04282435, -0.10801392,  0.09709814,  0.00516233, -0.01044389]
-# best_lambda = 2.47e-07
+from params import parameters_KingH as pr
 
-
-import parameters_CaliH as pr
-import player_1 as player_1
-import player_2 as player_2
-import player_3 as player_3
-import player_4 as player_4
+from players import player_1, player_2, player_3, player_4, player_manager_LR_multi
 
 from player_manager_LR_multi import sample_kl_divergences
 from utils import powerset
@@ -94,35 +62,13 @@ def impute_with_mean(X):
 # P1_LOCAL_SAMPLE = 'iid' # iid, lvg_iid
 
 
-# P2_DATA_RATIO = 0.1  # 0.01, 0.1, 0.5
-# P2_NAN_RATIO = 0.2 # 0.1, 0.2
+P2_DATA_RATIO = 0.1  # 0.01, 0.1, 0.5
+P2_NAN_RATIO = 0.2 # 0.1, 0.2
 
-# for P1_DATA_SIZE in [1000, 5000]:
-    # for P1_LOCAL_SAMPLE_SIZE in [100, 500]:
+for P1_DATA_SIZE in [1000, 5000]:
+    for P1_LOCAL_SAMPLE_SIZE in [100, 500]:
         # for P1_LOCAL_SAMPLE in ['iid' ,'lvg_iid']:
-
-
-# P1_DATA_SIZE = 10000 # 100, 500, 2000
-# P1_LOCAL_SAMPLE_SIZE =  100 # 10, 100, 500
-# P1_LOCAL_SAMPLE = 'iid' # iid, lvg_iid
-
-P2_DATA_RATIO = 0.05  # 0.01, 0.1, 0.5
-P2_NAN_RATIO = 0.3 # 0.1, 0.2
-
-P1_DATA_SIZE = 1000 # 100, 500, 2000
-P1_LOCAL_SAMPLE_SIZE = 500 # 10, 100, 500
-# P1_LOCAL_SAMPLE = 'lvg_iid' # iid, lvg_iid
-
-
-for P2_DATA_RATIO in [0.05]:
-    for P2_NAN_RATIO in [0.3]:
-# for P1_DATA_SIZE in [1000, 5000]:
-    # for P1_LOCAL_SAMPLE_SIZE in [100, 500]:
-        # for P1_LOCAL_SAMPLE in ['iid' ,'lvg_iid']:
-        exp_dir = oj('multiplayer-BV', 'CaliH', "P1-{}_{}-P2ratio-{}-{}".format(str(P1_DATA_SIZE), str(P1_LOCAL_SAMPLE_SIZE), str(P2_DATA_RATIO), str(P2_NAN_RATIO)) )
-
-
-        # exp_dir = oj('multiplayer', 'CaliH', "P1-{}_{}".format(str(P1_DATA_SIZE), str(P1_LOCAL_SAMPLE_SIZE)) )
+        exp_dir = oj('multiplayer-BV', 'KingH', "P1-{}_{}".format(str(P1_DATA_SIZE), str(P1_LOCAL_SAMPLE_SIZE)) )
 
         os.makedirs(exp_dir, exist_ok=True)
 
@@ -214,7 +160,8 @@ for P2_DATA_RATIO in [0.05]:
                 x, y = X_1[indices], y_1[indices]
 
                 theta_hat = np.linalg.inv(x.T @ x + reg_lambda * np.identity(x.shape[1])) @ x.T @ y  
-                sample_theta[i] = theta_hat
+
+                sample_theta[i] = np.squeeze(theta_hat)
             return sample_theta
 
 
@@ -228,6 +175,7 @@ for P2_DATA_RATIO in [0.05]:
         player_2.data_cov = np.linalg.inv(player_2.data_cov_inv)
         player_2.data_mean = np.linalg.inv(X_2.T @ X_2 + reg_lambda * np.identity(X_2.shape[1])) @ X_2.T @ y_2
 
+        player_2.data_mean = np.squeeze(player_2.data_mean)
         print("Player 2 maintained prior mean:", player_2.data_mean)
         print("Player 2 maintained prior cov:", player_2.data_cov)
 
@@ -246,7 +194,7 @@ for P2_DATA_RATIO in [0.05]:
                 x, y = X_1[indices], y_1[indices]
 
                 theta_hat = np.linalg.inv(x.T @ x + reg_lambda * np.identity(x.shape[1])) @ x.T @ y  
-                sample_theta[i] = theta_hat
+                sample_theta[i] = theta_hat.squeeze()
             return sample_theta
 
         # Player 4 maintains a posterior of BLR trained on the data
@@ -255,6 +203,7 @@ for P2_DATA_RATIO in [0.05]:
         player_4.data_cov_inv = np.linalg.inv(player_4.data_cov) + beta * (X_4.T @ X_4)
         player_4.data_cov = np.linalg.inv(player_4.data_cov_inv)
         player_4.data_mean = np.linalg.inv(X_4.T @ X_4 + reg_lambda * np.identity(X_4.shape[1])) @ X_4.T @ y_4
+        player_4.data_mean = np.squeeze(player_4.data_mean)
 
         print("Player 4 maintained prior mean:", player_4.data_mean)
         print("Player 4 maintained prior cov:", player_4.data_cov)
@@ -347,9 +296,11 @@ for P2_DATA_RATIO in [0.05]:
 
                         C = len(subset) 
                         if C == 0:
-                            sample_banzhaffs[index] +=  BV_coalition_weight * sample_kls[subset_included]
+                            sample_banzhaffs[index] +=  BV_coalition_weight * \
+                            sample_kls[subset_included]
                         else:                    
-                            sample_banzhaffs[index] +=  BV_coalition_weight * (sample_kls[subset_included] - sample_kls[tuple(subset)])
+                            sample_banzhaffs[index] +=  BV_coalition_weight * \
+                            (sample_kls[subset_included] - sample_kls[tuple(subset)])
 
             for player_index, player_banzhaff_list in enumerate(player_banzhaff_lists):
                 player_banzhaff_list.append(sample_banzhaffs[player_index])
@@ -396,7 +347,8 @@ for P2_DATA_RATIO in [0.05]:
 
         for player_index in range(N):
 
-            np.savetxt(oj(exp_dir, 'cumulative_{}.txt'.format(str(player_index+1))), player_sample_size_lists[player_index])
+
+            np.savetxt(oj(exp_dir,'cumulative_{}.txt'.format(str(player_index+1))), player_sample_size_lists[player_index])
             
             np.savetxt(oj(exp_dir, 'banzhaff_fair_{}.txt'.format(str(player_index+1))), player_banzhaff_lists[player_index])
             

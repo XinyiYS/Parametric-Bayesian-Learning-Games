@@ -20,10 +20,8 @@ X = StandardScaler().fit_transform(X=X)
 y = minmax_scale(y)
 
 
-import parameters_KingH as pr
-import player_1 as player_1
-import player_2 as player_2
-import player_12 as player_12
+from params import parameters_KingH as pr
+from players import player_1, player_2, player_12
 
 import theano
 import theano.tensor as T

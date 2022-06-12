@@ -1,4 +1,4 @@
-name: ConSV
+name: PBLG
 channels:
   - pytorch
   - anaconda
@@ -159,4 +159,3 @@ dependencies:
   - zstd=1.4.9=haebb681_0
   - pip:
     - opencv-python==4.5.2.52
-prefix: /home/fengzi/anaconda3/envs/ConSV

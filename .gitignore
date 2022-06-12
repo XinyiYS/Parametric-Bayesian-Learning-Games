@@ -132,8 +132,6 @@ dmypy.json
 # latex files
 latex/
 
-# data files
-.data
 
 # pdf image files
 *.pdf
@@ -142,24 +140,6 @@ latex/
 /original/*
 
 # experiment results
-CaliH/P1*
-CaliH/P2*
-CaliH/maxiter*
-
-KingH/P1*
-KingH/P2*
-
-FaceA/P1*
-FaceA/P2*
-
-figures*
-
-MNIST_VAE/
-MNIST_VAE-larger-sampling/
-
-multiplayer/
-multiplayer-BV/
-*/figures/*
-*/table/*
+exp_results_
 
 source code*

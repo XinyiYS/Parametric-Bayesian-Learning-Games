@@ -19,11 +19,9 @@ X = StandardScaler().fit_transform(X=X)
 y = minmax_scale(y)
 
 
-import parameters_KingH as pr
-import player_1 as player_1
-import player_2 as player_2
-import player_3 as player_3
-import player_4 as player_4
+from params import parameters_KingH as pr
+
+from players import player_1, player_2, player_3, player_4, player_manager_LR_multi
 
 from player_manager_LR_multi import sample_kl_divergences
 from utils import powerset

@@ -90,21 +90,15 @@ def sample4(data_size):
     return sampled_vae_mus, sampled_vae_logvars
 
 
-import parameters_MNIST as pr
-import player_1_gmm as player_1
-import player_2_gmm as player_2
-import player_3_gmm as player_3
-import player_4_gmm as player_4
-# import player_12_gmm as player_12
 
-import player_manager_gmm_multi
+from params import parameters_MNIST as pr
+
+from players import player_1_gmm as player_1, player_2_gmm as player_2, player_3_gmm as player_3, player_4_gmm as player_4
+from players import player_manager_gmm_multi
 from player_manager_gmm_multi import sample_kl_divergences
+
+
 from utils import powerset
-
-
-from collections import defaultdict
-
-
 
 from collections import defaultdict
 from math import factorial as fac
@@ -370,7 +364,6 @@ for P1_DATA_SIZE, P2_DATA_SIZE in [(1000, 5000), (5000, 5000)]:
             np.savetxt(oj(exp_dir, 'FI_det_{}.txt'.format(str(player_index+1))), player_FI_lists[player_index])
 
         log_file.close()
-
 
         # np.savetxt(oj(exp_dir, "estimated_means.txt"), p12_estimated_means)
         # np.savetxt(oj(exp_dir, "estimated_covs.txt"), p12_estimated_covs)

@@ -28,36 +28,13 @@ X = df.drop(columns=['MedHouseVal']).values
 X = StandardScaler().fit_transform(X=X)
 y = minmax_scale(y)
 
-'''
-curr_best = float('inf')
-best_w = None
-best_lambda = None
-for reg_lambda in np.logspace(-15, 0, num=1000):
-    w = np.linalg.inv(X.T @ X + reg_lambda * np.identity(X.shape[1])) @ X.T @ y
-    risk = np.linalg.norm(w @ X.T - y)
-    if risk < curr_best:
-        best_w = w
-        curr_best = risk
-        best_lambda = reg_lambda
-        print('updating at: ', reg_lambda, curr_best)
-
-print("Best lambda: {}, empirical risk:{} , w:{}.".format(best_lambda, curr_best, best_w))
-true_params = best_w
-best_lambda = best_lambda
-'''
-# true_params = [0.21031031,  0.04282435, -0.10801392,  0.09709814,  0.00516233, -0.01044389]
-# best_lambda = 2.47e-07
 
 
-import parameters_CaliH as pr
-import player_1 as player_1
-import player_2 as player_2
-import player_3 as player_3
-import player_4 as player_4
+from params import parameters_CaliH as pr
 
+from players import player_1, player_2, player_3, player_4, player_manager_LR_multi
 from player_manager_LR_multi import sample_kl_divergences
 from utils import powerset
-
 
 from collections import defaultdict
 from math import factorial as fac
@@ -308,7 +285,6 @@ for P2_DATA_RATIO in [0.05]:
 
             player_index_data_dict = {0:[data_theta1], 1:[data_x2],\
                 2:[data_theta3], 3:[data_x4]}
-
 
             sample_kls = defaultdict(float) # a dict for later calculation of SV
 

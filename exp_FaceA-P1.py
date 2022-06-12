@@ -21,33 +21,10 @@ X = X.drop(columns=['9']) # column 9 is all 0, so we drop it upon inspection
 X = StandardScaler().fit_transform(X=X)
 y = minmax_scale(y)
 
-'''
-curr_best = float('inf')
-best_w = None
-best_lambda = None
-for reg_lambda in np.logspace(-15, 0, num=1000):
-    w = np.linalg.inv(X.T @ X + reg_lambda * np.identity(X.shape[1])) @ X.T @ y
-
-    risk = np.linalg.norm(w.T @ X.T - y)
-
-    if risk < curr_best:
-        best_w = w
-        curr_best = risk
-        best_lambda = reg_lambda
-        print('updating at: ', reg_lambda, curr_best)
-
-print("Best lambda: {}, empirical risk:{} , w:{}.".format(best_lambda, curr_best, best_w))
-true_params = best_w
-best_lambda = best_lambda
-'''
-# true_params = [0.21031031,  0.04282435, -0.10801392,  0.09709814,  0.00516233, -0.01044389]
-# best_lambda = 2.47e-07
 
 
-import parameters_FaceA as pr
-import player_1 as player_1
-import player_2 as player_2
-import player_12 as player_12
+from params import parameters_FaceA as pr
+from players import player_1, player_2, player_12
 
 import theano
 import theano.tensor as T
