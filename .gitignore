@@ -143,3 +143,9 @@ latex/
 exp_results_
 
 source code*
+
+# archived code 
+archive_*
+
+# dev code
+dev_*
