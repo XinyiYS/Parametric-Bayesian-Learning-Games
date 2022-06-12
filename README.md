@@ -1,4 +1,4 @@
-# Parametric Bayesian Learning Games
+# On the Convergence of the Shapley Value in Parametric Bayesian Learning Games [ICML-2022]
 Official implementation of our ICML'22 paper ["On the Convergence of the Shapley Value in Parametric Bayesian Learning Games"](https://arxiv.org/abs/2205.07428) (__21.9%__ acceptance rate).
 
 ## Requirements
