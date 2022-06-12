@@ -1,4 +1,4 @@
-# Bayesian_Parametric_Learning_Games
+# Parametric Bayesian Learning Games
 Official implementation of our ICML'22 paper ["On the Convergence of the Shapley Value in Parametric Bayesian Learning Games"](https://arxiv.org/abs/2205.07428) (__21.9%__ acceptance rate).
 
 ## Requirements
@@ -6,16 +6,16 @@ Official implementation of our ICML'22 paper ["On the Convergence of the Shapley
 2. Anaconda (alternatively, you may install the packages in `environment.yml` manually)
 
 ## Setup
-1. Run the following command to install the required Python packages into a new environment named BPLG using Anaconda.
+1. Run the following command to install the required Python packages into a new environment named PBLG using Anaconda.
 ```shell
 conda env create -f environment.yml
 ```
 
 ## Running experiments
 In the main directory,
-1. Change current environment to the BPLG environment.
+1. Change current environment to the PBLG environment.
 ```shell
-conda activate BPLG
+conda activate PBLG
 ```
 2. Run the desired experiment. Files with names `exp_*.py` are scripts for different experiments. 
 - For instance, `exp_CaliH-P1.py` runs the experiment on the California housing dataset by varying the hyperparameters w.r.t. Player 1 (P1).
